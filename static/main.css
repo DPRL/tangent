@@ -1,0 +1,48 @@
+body {
+    margin: 0;
+    font-family: "Helvetica Neue";
+    font-size: 1.4em;
+}
+
+#header {
+    background-color: #eee;
+    padding: 12px 30px;
+    overflow: auto;
+    border-bottom: 1px solid #ccc;
+}
+
+#logo {
+    padding-right: 150px;
+    font-family: "Helvetica Neue";
+    font-weight: 100;
+    font-size: 2em;
+    float: left;
+}
+
+#search {
+    border: 1px solid #ccc;
+    background: white;
+    padding: 4px;
+    margin-top: 9px;
+    float: left;
+    font-size: 1em;
+    width: 500px;
+}
+
+#results {
+    list-style: none;
+    padding: 30px;
+}
+
+.result {
+    padding: 15px 30px;
+}
+
+.expression {
+    padding-bottom: 5px;
+}
+
+.score {
+    font-size: 0.8em;
+    color: #666;
+}
