@@ -5,7 +5,10 @@ index = TreeIndex()
 
 @app.route('/')
 def hello():
-    return render_template('results.html')
+    results = sorted(index.search(a), reverse=True, key=lambda x: x[1])
+    results = map(lambda x: ('$' + index.trees[x[0]].tex + '$', x[1]), results)
+    print(results)
+    return render_template('results.html', results=results)
 
 if __name__ == '__main__':
 
