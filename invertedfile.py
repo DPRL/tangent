@@ -2,6 +2,7 @@ from collections import Counter, defaultdict
 from sys import argv
 import re
 import os
+import subprocess
 
 class Symbol:
     def __init__(self, tag, above=None, below=None):
@@ -36,25 +37,34 @@ class SymbolTree:
                     yield p
 
     @classmethod
-    def parse(cls, f, level=0):
+    def parse_from_tex(cls, tex):
+        p = subprocess.Popen('txl -q -indent 2 /dev/stdin FormatModTeX.Txl', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
+        (output, _) = p.communicate(input=tex)
+        t = cls.parse(output.splitlines().__iter__())
+        t.tex = tex
+        return t
+
+    @classmethod
+    def parse(cls, iterator, level=0):
         symbols = []
         while True:
-            l = f.readline()
-            if l == '':
-                return cls(symbols, filename=f.name)
-            groups = re.match(r'(?P<whitespace>\s*)(?P<sub>::)?( (?P<type>\w+) (?P<arg>\w+))?', l).groupdict()
+            try:
+                l = iterator.next()
+            except StopIteration:
+                return cls(symbols)
+            groups = re.match(r'(?P<whitespace>\s*)(?P<sub>::)?( (?P<type>\S+) (?P<arg>\S+))?', l).groupdict()
             if not groups['sub']:
                 symbols.append(Symbol(l.strip()))
             else:
                 if not groups['type']:
                     if len(groups['whitespace']) < level:
-                        return cls(symbols, filename=f.name)
+                        return cls(symbols)
                 if groups['type'] == 'REL':
-                    f.readline()
+                    iterator.next()
                     if groups['arg'] == '^':
-                        symbols[-1].above = cls.parse(f, level=level+2)
+                        symbols[-1].above = cls.parse(iterator, level=level+2)
                     elif groups['arg'] == '_':
-                        symbols[-1].below = cls.parse(f, level=level+2)
+                        symbols[-1].below = cls.parse(iterator, level=level+2)
 
 
 class TreeIndex:
@@ -82,14 +92,16 @@ class TreeIndex:
 
 if __name__ == '__main__':
 
-    index = TreeIndex()
+    print(list(SymbolTree.parse_from_tex('x^2+y^2').get_pairs()))
 
-    for root, dirs, files in os.walk(argv[1]):
-        for filename in files:
-            with open(os.path.join(root, filename)) as f:
-                index.add(SymbolTree.parse(f))
+    #index = TreeIndex()
 
-    print(len(index.trees));
+    #for root, dirs, files in os.walk(argv[1]):
+        #for filename in files:
+            #with open(os.path.join(root, filename)) as f:
+                #index.add(SymbolTree.parse(f))
+
+    #print(len(index.trees));
 
     #index.add(SymbolTree([
         #Symbol('x', SymbolTree([
@@ -126,27 +138,27 @@ if __name__ == '__main__':
     #]))
 
 
-    s = SymbolTree([
-        Symbol('x', SymbolTree([
-            Symbol('2'),
-            Symbol('*'),
-            Symbol('b')
-        ])),
-        Symbol('+'),
-        Symbol('y', below=SymbolTree([
-            Symbol('z')
-        ]))
-    ])
+    #s = SymbolTree([
+        #Symbol('x', SymbolTree([
+            #Symbol('2'),
+            #Symbol('*'),
+            #Symbol('b')
+        #])),
+        #Symbol('+'),
+        #Symbol('y', below=SymbolTree([
+            #Symbol('z')
+        #]))
+    #])
 
-    t = SymbolTree([
-        Symbol('M'),
-        Symbol('='),
-        Symbol('1')
-    ])
+    #t = SymbolTree([
+        #Symbol('M'),
+        #Symbol('='),
+        #Symbol('1')
+    #])
 
-    #import pdb; pdb.set_trace()
+    ##import pdb; pdb.set_trace()
 
-    results = sorted(index.search(t), reverse=True, key=lambda x: x[1])
+    #results = sorted(index.search(t), reverse=True, key=lambda x: x[1])
 
-    for i, score in results:
-        print (index.trees[i].filename, score)
+    #for i, score in results:
+        #print (index.trees[i].filename, score)
