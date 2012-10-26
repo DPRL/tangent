@@ -19,7 +19,7 @@ body {
     float: left;
 }
 
-#search {
+#query {
     border: 1px solid #ccc;
     background: white;
     padding: 4px;
@@ -44,5 +44,25 @@ body {
 
 .score {
     font-size: 0.8em;
-    color: #666;
+    color: #999;
+}
+
+#numResults {
+    padding: 20px 60px 0 60px;
+    color: #999;
+    font-size: 0.8em;
+}
+
+.home #header {
+    font-size:1.6em;
+    margin-top: 200px;
+    border-top: 1px solid #ccc;
+}
+
+.home #logo {
+
+}
+
+.home #query {
+    margin-top:15px
 }

@@ -6,23 +6,11 @@
         <script type="text/javascript" src="/static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
         <script type="text/javascript" src="/static/main.js"></script>
     </head>
-    <body>
+    <body class="home">
         <div id="header">
             <div id="logo">Mathsearch</div>
-            <input id="query" value="{{ query }}">
+            <input id="query" placeholder="x^2 + y^2">
         </div>
-        <div id="numResults">
-            {{ num_results }} results found.
-        </div>
-        <ul id="results">
-        {% for r in results %}
-            <li class="result">
-                <div class="expression">{{ r[0] }}</div>
-                <div class="score">Score: {{ r[1] }}</div>
-            </li>
-        {% endfor %}
-        </ul>
-
     </body>
 
 </html>
