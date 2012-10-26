@@ -18,7 +18,7 @@
         {% for r in results %}
             <li class="result">
                 <div class="expression">{{ r[0] }}</div>
-                <div class="score">Score: {{ r[1] }}</div>
+                <div class="score">Score: {{ '{:.3f}'.format(r[1]) }}</div>
             </li>
         {% endfor %}
         </ul>
