@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request
 from invertedfile import Symbol, SymbolTree, TreeIndex
+import os
+from sys import argv
+
 app = Flask(__name__)
 index = TreeIndex()
 
@@ -23,15 +26,13 @@ def query():
 
 if __name__ == '__main__':
 
-    a = SymbolTree.parse_from_tex('a^2+b^2=c^2')
-    b = SymbolTree.parse_from_tex('a^3+b^3=c^3')
-    c = SymbolTree.parse_from_tex('x^2+y^2=z^2')
-    index.add(a)
-    index.add(b)
-    index.add(c)
+    for root, dirs, files in os.walk(argv[1]):
+        for filename in files:
+            with open(os.path.join(root, filename)) as f:
+                tex = f.read()
+                index.add(SymbolTree.parse_from_tex(tex))
+    index.add(SymbolTree.parse_from_tex('a^2+b^2=c^2'))
+    index.add(SymbolTree.parse_from_tex('a^3+b^3=c^3'))
+    index.add(SymbolTree.parse_from_tex('x^2+y^2=z^2'))
     
-    results = sorted(index.search(a), reverse=True, key=lambda x: x[1])
-
-    for i, score in results:
-        print (index.trees[i].tex, score)
     app.run(port=9001, host='0.0.0.0')
