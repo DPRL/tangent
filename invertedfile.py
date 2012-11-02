@@ -38,7 +38,7 @@ class SymbolTree:
 
     @classmethod
     def parse_from_tex(cls, tex):
-        p = subprocess.Popen('txl -q -indent 2 /dev/stdin FormatModTeX.Txl', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
+        p = subprocess.Popen('txl -q -indent 2 /dev/stdin scripts/FormatModTeX.Txl', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
         (output, _) = p.communicate(input=tex)
         t = cls.parse(output.splitlines().__iter__())
         t.tex = tex
