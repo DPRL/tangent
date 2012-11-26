@@ -33,5 +33,7 @@ if __name__ == '__main__':
     index.add(SymbolTree.parse_from_tex('a^2+b^2=c^2'))
     index.add(SymbolTree.parse_from_tex('a^3+b^3=c^3'))
     index.add(SymbolTree.parse_from_tex('x^2+y^2=z^2'))
+
+    print('%d expressions in index' % len(index.trees))
     
-    app.run(port=9001, host='0.0.0.0')
+    app.run(port=9001, host='0.0.0.0', debug=True)
