@@ -23,6 +23,11 @@ def query():
     results = map(lambda x: (index.trees[x[0]].get_tex(), x[1]), results)
     return render_template('results.html', query=query, results=results, num_results=len(results))
 
+@app.route('/list')
+def list():
+    expressions = index.trees[:100]
+    return render_template('list.html', expressions=expressions)
+
 if __name__ == '__main__':
 
     for root, dirs, files in os.walk(argv[1]):
