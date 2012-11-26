@@ -20,8 +20,7 @@ def query():
     query = request.args['query']
     t = SymbolTree.parse_from_tex(query)
     results = sorted(index.search(t), reverse=True, key=lambda x: x[1])
-    results = map(lambda x: ('$' + index.trees[x[0]].tex + '$', x[1]), results)
-    print(results)
+    results = map(lambda x: (index.trees[x[0]].get_tex(), x[1]), results)
     return render_template('results.html', query=query, results=results, num_results=len(results))
 
 if __name__ == '__main__':

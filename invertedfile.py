@@ -36,6 +36,9 @@ class SymbolTree:
                 for p in si.below.get_pairs():
                     yield p
 
+    def get_tex(self):
+        return '${0}$'.format(self.tex)
+
     @classmethod
     def parse_from_tex(cls, tex):
         p = subprocess.Popen('txl -q -indent 2 /dev/stdin scripts/FormatModTeX.Txl', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
