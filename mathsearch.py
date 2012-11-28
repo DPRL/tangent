@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request
-from invertedfile import Symbol, SymbolTree, TreeIndex, SymbolIndex
+from invertedfile import TreeIndex, SymbolIndex
 import os
 from sys import argv
 
 app = Flask(__name__)
-index = SymbolIndex()
+index = TreeIndex()
 
 @app.route('/')
 def root():
@@ -18,13 +18,12 @@ def home():
 
 def query():
     query = request.args['query']
-    t = SymbolTree.parse_from_tex(query)
-    results = sorted(index.search(t), reverse=True, key=lambda x: x[1])
+    results = sorted(index.search_tex(query), reverse=True, key=lambda x: x[1])
     results = map(lambda x: (x[0].get_tex(), x[1]), results)
     return render_template('results.html', query=query, results=results, num_results=len(results))
 
 @app.route('/list')
-def list():
+def list_all():
     expressions = index.trees[:100]
     return render_template('list.html', expressions=expressions)
 
@@ -33,14 +32,12 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(argv[1]):
         for filename in files:
             with open(os.path.join(root, filename)) as f:
-                tex = f.read()
-                s = SymbolTree.parse_from_tex(tex)
-                index.add(s)
-    index.add(SymbolTree.parse_from_tex('a^2+b^2=c^2'))
-    index.add(SymbolTree.parse_from_tex('a^3+b^3=c^3'))
-    index.add(SymbolTree.parse_from_tex('x^2+y^2=z^2'))
+                index.add_tex(f.read())
+    index.add_tex('a^2+b^2=c^2')
+    index.add_tex('a^3+b^3=c^3')
+    index.add_tex('x^2+y^2=z^2')
 
-    print(index.search(SymbolTree.parse_from_tex('a^2+b^2=c^2')))
+    print(list(index.search_tex('a^2+b^2=c^2')))
 
     #print('%d expressions in index' % len(index.trees))
     
