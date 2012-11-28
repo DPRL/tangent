@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request
-from invertedfile import TreeIndex, SymbolIndex
+from invertedfile import PairIndex, SymbolIndex, CombinationIndex
 import os
 from sys import argv
 
 app = Flask(__name__)
-index = TreeIndex()
+index = CombinationIndex()
 
 @app.route('/')
 def root():
