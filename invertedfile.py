@@ -36,6 +36,15 @@ class SymbolTree:
                 for p in si.below.get_pairs():
                     yield p
 
+    def get_symbols(self):
+        symbols = map(lambda x: x.tag, self.symbols)
+        for s in self.symbols:
+            if s.above:
+                symbols.extend(s.above.get_symbols())
+            if s.below:
+                symbols.extend(s.below.get_symbols())
+        return symbols
+
     def get_tex(self):
         return '${0}$'.format(self.tex)
 
@@ -69,6 +78,9 @@ class SymbolTree:
                     elif groups['arg'] == '_':
                         symbols[-1].below = cls.parse(iterator, level=level+2)
 
+    def __repr__(self):
+        return 'SymbolTree({0})'.format(self.tex)
+
 
 class TreeIndex:
     def __init__(self):
@@ -90,6 +102,25 @@ class TreeIndex:
         for tree, count in results.most_common():
             recall = float(count) / len(pairs)
             precision = float(count) / self.trees[tree].num_pairs
+            f_measure = 2 * (precision * recall) / (precision + recall)
+            yield tree, f_measure
+
+class SymbolIndex:
+    def __init__(self):
+        self.index = defaultdict(Counter)
+
+    def add(self, tree):
+        for symbol, count in Counter(tree.get_symbols()).most_common():
+            self.index[symbol].update({tree: count})
+
+    def search(self, search_tree):
+        results = Counter()
+        symbols = search_tree.get_symbols()
+        for symbol in set(symbols):
+            results.update(self.index[symbol])
+        for tree, count in results.most_common():
+            recall = float(count) / len(symbols)
+            precision = float(count) / len(tree.get_symbols())
             f_measure = 2 * (precision * recall) / (precision + recall)
             yield tree, f_measure
 
