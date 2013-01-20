@@ -1,5 +1,6 @@
 from symboltree import SymbolTree
 from collections import Counter, defaultdict
+import os
 
 class Index:
     def add_tex(self, tex):
@@ -8,10 +9,19 @@ class Index:
     def search_tex(self, tex):
         return self.search(SymbolTree.parse_from_tex(tex))
 
+    def add_directory(self, directory):
+        for root, dirs, files in os.walk(directory):
+            for filename in files:
+                with open(os.path.join(root, filename)) as f:
+                    self.add_tex(f.read())
+
 class PairIndex(Index):
     def __init__(self):
         self.index = defaultdict(Counter)
         self.trees = []
+
+    def get_size(self):
+        return len(self.trees)
 
     def add(self, tree):
         self.trees.append(tree)
@@ -36,6 +46,9 @@ class SymbolIndex(Index):
     def __init__(self):
         self.index = defaultdict(Counter)
 
+    def get_size(self):
+        return len(self.index)
+
     def add(self, tree):
         for symbol, count in Counter(tree.get_symbols()).most_common():
             self.index[symbol].update({tree: count})
@@ -55,6 +68,9 @@ class CombinationIndex(Index):
     def __init__(self):
         self.indices = [PairIndex(), SymbolIndex()]
     
+    def get_size(self):
+        return sum(map(lambda x: x.get_size(), self.indices)) / len(self.indices)
+
     def add(self, tree):
         for index in self.indices:
             index.add(tree)
