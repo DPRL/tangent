@@ -34,46 +34,37 @@ class Symbol:
                 ret.extend(child.get_pairs())
         return ret
 
-def largest_cc(edges):
-    ccs = {}
-    for _, _, h_dist, _, right in edges:
-        left = right[:-h_dist]
-        if left in ccs:
-            left_set = ccs[left]
-            if right in ccs:
-                right_set = ccs[right]
-                left_set.merge(right_set)
-                for v in right_set:
-                    ccs[v] = left_set
+    @classmethod
+    def parse(cls, lines):
+        #import ipdb; ipdb.set_trace()
+        s = cls(lines.popleft().strip())
+        ended = False
+        while not ended:
+            if not lines:
+                ended = True
             else:
-                left_set.add(right)
-                ccs[right] = left_set
-        else:
-            if right in ccs:
-                right_set = ccs[right]
-                right_set.add(left)
-                ccs[left] = right_set
-            else:
-                cc = ConnectedComponent([left, right])
-                ccs[left] = cc
-                ccs[right] = cc
-    return max(map(lambda x: x.size, ccs.values()))
-
-class ConnectedComponent(set):
-    def __init__(self, *args, **kwargs):
-        self.size = 1
-        super(ConnectedComponent, self).__init__(*args, **kwargs)
-
-    def add(self, elem):
-        self.size += 1
-        super(ConnectedComponent, self).add(elem)
-
-    def merge(self, elems):
-        if self is elems:
-            self.size += 1
-        else:
-            self.size += elems.size - 1
-            super(ConnectedComponent, self).update(elems)
+                next_line = lines[0].strip()
+                if next_line == '::':
+                    lines.popleft()
+                    ended = True
+                elif next_line == ':: REL ^':
+                    if s.above: 
+                        raise Exception
+                    lines.popleft()
+                    lines.popleft()
+                    s.above = cls.parse(lines)
+                elif next_line == ':: REL _':
+                    if s.below: 
+                        raise Exception
+                    lines.popleft()
+                    lines.popleft()
+                    s.below = cls.parse(lines)
+                else:
+                    if s.next: 
+                        raise Exception
+                    s.next = cls.parse(lines)
+                    ended = True
+        return s
 
 class SymbolIterator(object):
     def __init__(self, node):
@@ -94,43 +85,17 @@ class SymbolIterator(object):
             self.stack.append((elem.above, h_dist + 1, v_dist + 1))
         return (elem, h_dist, v_dist)
 
-
 class SymbolTree:
-    def __init__(self, symbols, filename=None, tex=None):
-        self.symbols = symbols
+    def __init__(self, root, tex=None):
+        self.root = root
         self.num_pairs = len(list(self.get_pairs()))
-        self.filename = filename
         self.tex = tex
 
     def get_pairs(self):
-        
-
-        for i in range(len(self.symbols)):
-            si = self.symbols[i]
-            for j in range(i + 1, len(self.symbols)):
-                sj = self.symbols[j]
-                yield (si.tag, sj.tag, 0, j - i)
-            if si.above:
-                for j in range(len(si.above.symbols)):
-                    sj = si.above.symbols[j]
-                    yield (si.tag, sj.tag, 1, j + 1)
-                for p in si.above.get_pairs():
-                    yield p
-            if si.below:
-                for j in range(len(si.below.symbols)):
-                    sj = si.below.symbols[j]
-                    yield (si.tag, sj.tag, -1, j + 1)
-                for p in si.below.get_pairs():
-                    yield p
+        return self.root.get_pairs()
 
     def get_symbols(self):
-        symbols = map(lambda x: x.tag, self.symbols)
-        for s in self.symbols:
-            if s.above:
-                symbols.extend(s.above.get_symbols())
-            if s.below:
-                symbols.extend(s.below.get_symbols())
-        return symbols
+        return self.root.get_symbols()
 
     def get_tex(self):
         return '${0}$'.format(self.tex)
@@ -144,34 +109,11 @@ class SymbolTree:
         return t
 
     @classmethod
-    def parse(cls, iterator, level=0):
-        symbols = []
-        while True:
-            try:
-                l = iterator.next()
-            except StopIteration:
-                return cls(symbols)
-            groups = re.match(r'(?P<whitespace>\s*)(?P<sub>::)?( (?P<type>\S+) (?P<arg>\S+))?', l).groupdict()
-            if not groups['sub']:
-                symbols.append(Symbol(l.strip()))
-            else:
-                if not groups['type']:
-                    if len(groups['whitespace']) < level:
-                        return cls(symbols)
-                if groups['type'] == 'REL':
-                    iterator.next()
-                    if groups['arg'] == '^':
-                        symbols[-1].above = cls.parse(iterator, level=level+2)
-                    elif groups['arg'] == '_':
-                        symbols[-1].below = cls.parse(iterator, level=level+2)
+    def parse(cls, iterator):
+        root = Symbol.parse(deque(iterator))
+        root.generate_ids()
+        return cls(root)
 
     def __repr__(self):
         return 'SymbolTree({0})'.format(self.tex)
 
-def main():
-    s = Symbol('x', Symbol('+', Symbol('y', Symbol('*'), Symbol('z'))))
-    s.generate_ids()
-    print(largest_cc(s.get_pairs()))
-
-if __name__ == '__main__':
-    main()

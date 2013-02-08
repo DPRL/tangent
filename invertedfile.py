@@ -45,22 +45,25 @@ class PairIndex(Index):
 class SymbolIndex(Index):
     def __init__(self):
         self.index = defaultdict(Counter)
+        self.size = 0
 
     def get_size(self):
-        return len(self.index)
+        return self.size
 
     def add(self, tree):
-        for symbol, count in Counter(tree.get_symbols()).most_common():
+        self.size += 1
+        symbols = map(lambda s: s[0].tag, tree.get_symbols())
+        for symbol, count in Counter(symbols).most_common():
             self.index[symbol].update({tree: count})
 
     def search(self, search_tree):
         results = Counter()
-        symbols = search_tree.get_symbols()
+        symbols = map(lambda s: s[0].tag, search_tree.get_symbols())
         for symbol in set(symbols):
             results.update(self.index[symbol])
         for tree, count in results.most_common():
             recall = float(count) / len(symbols)
-            precision = float(count) / len(tree.get_symbols())
+            precision = float(count) / len(list(tree.get_symbols()))
             f_measure = 2 * (precision * recall) / (precision + recall)
             yield tree, f_measure
 
@@ -84,3 +87,44 @@ class CombinationIndex(Index):
                 else:
                     results[tree] = score
         return results.items()
+
+def largest_cc(edges):
+    ccs = {}
+    for _, _, h_dist, _, right in edges:
+        left = right[:-h_dist]
+        if left in ccs:
+            left_set = ccs[left]
+            if right in ccs:
+                right_set = ccs[right]
+                left_set.merge(right_set)
+                for v in right_set:
+                    ccs[v] = left_set
+            else:
+                left_set.add(right)
+                ccs[right] = left_set
+        else:
+            if right in ccs:
+                right_set = ccs[right]
+                right_set.add(left)
+                ccs[left] = right_set
+            else:
+                cc = ConnectedComponent([left, right])
+                ccs[left] = cc
+                ccs[right] = cc
+    return max(map(lambda x: x.size, ccs.values()))
+
+class ConnectedComponent(set):
+    def __init__(self, *args, **kwargs):
+        self.size = 1
+        super(ConnectedComponent, self).__init__(*args, **kwargs)
+
+    def add(self, elem):
+        self.size += 1
+        super(ConnectedComponent, self).add(elem)
+
+    def merge(self, elems):
+        if self is elems:
+            self.size += 1
+        else:
+            self.size += elems.size - 1
+            super(ConnectedComponent, self).update(elems)
