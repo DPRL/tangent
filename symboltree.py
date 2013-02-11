@@ -1,7 +1,22 @@
 import re
 import os
 import subprocess
+import xml.etree.ElementTree as ET
 from collections import deque
+
+class MathML:
+    math = '{http://www.w3.org/1998/Math/MathML}math'
+    mn = '{http://www.w3.org/1998/Math/MathML}mn'
+    mo = '{http://www.w3.org/1998/Math/MathML}mo'
+    mi = '{http://www.w3.org/1998/Math/MathML}mi'
+    mrow = '{http://www.w3.org/1998/Math/MathML}mrow'
+    msub = '{http://www.w3.org/1998/Math/MathML}msub'
+    msup = '{http://www.w3.org/1998/Math/MathML}msup'
+    msubsup = '{http://www.w3.org/1998/Math/MathML}msubsup'
+    msqrt = '{http://www.w3.org/1998/Math/MathML}msqrt'
+    mroot = '{http://www.w3.org/1998/Math/MathML}mroot'
+    mfrac = '{http://www.w3.org/1998/Math/MathML}mfrac'
+
 
 class Symbol:
     def __init__(self, tag, next=None, above=None, below=None):
@@ -66,6 +81,49 @@ class Symbol:
                     ended = True
         return s
 
+    @classmethod
+    def parse_from_mathml(cls, elem):
+        if elem.tag == MathML.math:
+            children = list(elem)
+            if len(children) != 1:
+                raise Exception('math element with != 1 children')
+            else:
+                return cls.parse_from_mathml(children[0])
+        elif elem.tag == MathML.mrow:
+            children = map(cls.parse_from_mathml, elem)
+            for i in range(1, len(children)):
+                children[i - 1].next = children[i]
+            return children[0]
+            
+        elif elem.tag == MathML.mn:
+            return cls(elem.text)
+        elif elem.tag == MathML.mo:
+            return cls(elem.text)
+        elif elem.tag == MathML.mi:
+            return cls(elem.text)
+        elif elem.tag == MathML.msub:
+            children = map(cls.parse_from_mathml, elem)
+            children[0].above = children[1]
+            return children[0]
+        elif elem.tag == MathML.msup:
+            children = map(cls.parse_from_mathml, elem)
+            children[0].above = children[1]
+            return children[0]
+        elif elem.tag == MathML.msubsup:
+            children = map(cls.parse_from_mathml, elem)
+            children[0].above = children[1]
+            children[0].below = children[2]
+            return children[0]
+        elif elem.tag == MathML.msqrt:
+            raise Exception('msqrt unimplemented')
+        elif elem.tag == MathML.mroot:
+            raise Exception('mroot unimplemented')
+        elif elem.tag == MathML.mfrac:
+            raise Exception('mfrac unimplemented')
+        else:
+            raise Exception('unknown tag %s' % elem.tag)
+        return s
+
 class SymbolIterator(object):
     def __init__(self, node):
         self.stack = deque([(node, 0, 0)] if node else [])
@@ -107,6 +165,23 @@ class SymbolTree:
         t = cls.parse(output.splitlines().__iter__())
         t.tex = tex
         return t
+
+    @classmethod
+    def parse_from_mathml(cls, elem):
+        root = Symbol.parse_from_mathml(elem)
+        root.generate_ids()
+        return cls(root)
+
+    @classmethod
+    def parse_all_from_xml(cls, filename):
+        trees = []
+        for event, elem in ET.iterparse(filename):
+            if event == 'end' and elem.tag == MathML.math:
+                try:
+                    trees.append(cls.parse_from_mathml(elem))
+                except Exception, e:
+                    print(e.message)
+        return trees
 
     @classmethod
     def parse(cls, iterator):
