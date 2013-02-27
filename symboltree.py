@@ -2,7 +2,8 @@ import re
 import os
 import subprocess
 import xml.etree.ElementTree as ET
-from collections import deque
+from collections import deque, Counter
+from sys import argv
 
 class MathML:
     math = '{http://www.w3.org/1998/Math/MathML}math'
@@ -16,6 +17,11 @@ class MathML:
     msqrt = '{http://www.w3.org/1998/Math/MathML}msqrt'
     mroot = '{http://www.w3.org/1998/Math/MathML}mroot'
     mfrac = '{http://www.w3.org/1998/Math/MathML}mfrac'
+    mfenced = '{http://www.w3.org/1998/Math/MathML}mfenced'
+
+class UnknownTagException(Exception):
+    def __init__(self, tag):
+        self.tag = tag
 
 
 class Symbol:
@@ -50,8 +56,7 @@ class Symbol:
         return ret
 
     @classmethod
-    def parse(cls, lines):
-        #import ipdb; ipdb.set_trace()
+    def parse_from_slt(cls, lines):
         s = cls(lines.popleft().strip())
         ended = False
         while not ended:
@@ -67,17 +72,17 @@ class Symbol:
                         raise Exception
                     lines.popleft()
                     lines.popleft()
-                    s.above = cls.parse(lines)
+                    s.above = cls.parse_from_slt(lines)
                 elif next_line == ':: REL _':
                     if s.below: 
                         raise Exception
                     lines.popleft()
                     lines.popleft()
-                    s.below = cls.parse(lines)
+                    s.below = cls.parse_from_slt(lines)
                 else:
                     if s.next: 
                         raise Exception
-                    s.next = cls.parse(lines)
+                    s.next = cls.parse_from_slt(lines)
                     ended = True
         return s
 
@@ -85,16 +90,17 @@ class Symbol:
     def parse_from_mathml(cls, elem):
         if elem.tag == MathML.math:
             children = list(elem)
-            if len(children) != 1:
-                raise Exception('math element with != 1 children')
-            else:
+            if len(children) == 1:
                 return cls.parse_from_mathml(children[0])
+            elif len(children) == 0:
+                return None
+            else:
+                raise Exception('math element with more than 1 child')
         elif elem.tag == MathML.mrow:
             children = map(cls.parse_from_mathml, elem)
             for i in range(1, len(children)):
                 children[i - 1].next = children[i]
             return children[0]
-            
         elif elem.tag == MathML.mn:
             return cls(elem.text)
         elif elem.tag == MathML.mo:
@@ -119,10 +125,32 @@ class Symbol:
         elif elem.tag == MathML.mroot:
             raise Exception('mroot unimplemented')
         elif elem.tag == MathML.mfrac:
-            raise Exception('mfrac unimplemented')
+            children = map(cls.parse_from_mathml, elem)
+            if len(children) == 2:
+                s = cls('frac')
+                s.above = children[0]
+                s.below = children[1]
+                return s
+            else:
+                raise Exception('frac element with != 2 children')
+        elif elem.tag == MathML.mfenced:
+            opening = cls(elem.attrib.get('open', '('))
+            closing = cls(elem.attrib.get('close', '('))
+            children = map(cls.parse_from_mathml, elem)
+            separators = elem.attrib.get('separators', ',').split()
+
+            row = [opening]
+            if children:
+                row.append(children[0])
+            for i, child in enumerate(children[1:]):
+                row.append(cls(separators[min(i, len(separators) - 1)]))
+                row.append(child)
+            row.append(closing)
+            for i, symbol in list(enumerate(row))[1:]:
+                row[i - 1].next = symbol
+            return opening
         else:
-            raise Exception('unknown tag %s' % elem.tag)
-        return s
+            raise UnknownTagException(elem.tag)
 
 class SymbolIterator(object):
     def __init__(self, node):
@@ -162,7 +190,7 @@ class SymbolTree:
     def parse_from_tex(cls, tex):
         p = subprocess.Popen('txl -q -indent 2 /dev/stdin scripts/FormatModTeX.Txl', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
         (output, _) = p.communicate(input=tex)
-        t = cls.parse(output.splitlines().__iter__())
+        t = cls.parse_from_slt(output.splitlines().__iter__())
         t.tex = tex
         return t
 
@@ -173,22 +201,70 @@ class SymbolTree:
         return cls(root)
 
     @classmethod
-    def parse_all_from_xml(cls, filename):
+    def parse_all_from_xml(cls, filename, missing_tags=None):
         trees = []
         for event, elem in ET.iterparse(filename):
             if event == 'end' and elem.tag == MathML.math:
                 try:
                     trees.append(cls.parse_from_mathml(elem))
-                except Exception, e:
+                    elem.tail = None
+                    elem.attrib = {}
+                    trees[-1].mathml = ET.tostring(elem)
+                except UnknownTagException as e:
+                    if missing_tags is not None:
+                        missing_tags.update([e.tag])
+                except Exception as e:
                     print(e.message)
         return trees
 
     @classmethod
-    def parse(cls, iterator):
-        root = Symbol.parse(deque(iterator))
+    def parse_from_slt(cls, lines):
+        root = Symbol.parse_from_slt(deque(lines))
         root.generate_ids()
         return cls(root)
 
-    def __repr__(self):
-        return 'SymbolTree({0})'.format(self.tex)
+    @classmethod
+    def count_tags(cls, directory):
+        tags = Counter()
+        fullnames = []
+        for dirname, dirnames, filenames in os.walk(directory):
+            fullnames.extend([os.path.join(dirname, filename)
+                for filename
+                in filenames
+                if os.path.splitext(filename)[1] in ['.xhtml', '.xml', '.mathml']])
 
+        for i, fullname in enumerate(fullnames):
+            print('parsing %s (%d of %d)' % (fullname, i + 1, len(fullnames)))
+            for event, elem in ET.iterparse(fullname):
+                if event == 'end' and elem.tag.startswith('{http://www.w3.org/1998/Math/MathML}'):
+                    tags.update([elem.tag[36:]])
+        for tag, count in tags.most_common():
+            print('%s, %d' % (tag, count))
+
+    @classmethod
+    def parse_all(cls, directory):
+        trees = []
+        missing_tags = Counter()
+        fullnames = []
+        for dirname, dirnames, filenames in os.walk(directory):
+            fullnames.extend([os.path.join(dirname, filename) for filename in filenames])
+
+        for i, fullname in enumerate(fullnames):
+            print('parsing %s (%d of %d)' % (fullname, i + 1, len(fullnames)))
+            _, ext = os.path.splitext(fullname)
+            if ext == '.tex':
+                with open(fullname, 'r') as f:
+                    trees.append(parse_from_tex(f.read()))
+            elif ext in ['.xhtml', '.xml', '.mathml']:
+                trees.extend(cls.parse_all_from_xml(fullname, missing_tags=missing_tags))
+        print(missing_tags)
+        return trees
+
+
+    def __repr__(self):
+
+        return 'SymbolTree({0})'.format(self.mathml if self.mathml else self.tex)
+
+if __name__ == '__main__':
+    trees = SymbolTree.parse_all(argv[1])
+    print('%d expressions parsed' % len(trees))
