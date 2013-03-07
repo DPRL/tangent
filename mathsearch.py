@@ -3,7 +3,7 @@ from invertedfile import PairIndex, SymbolIndex, CombinationIndex
 from sys import argv
 
 app = Flask(__name__)
-index = CombinationIndex()
+index = PairIndex()
 
 @app.route('/')
 def root():
@@ -22,8 +22,7 @@ def home():
 
 def query():
     query = request.args['query']
-    results = sorted(index.search_tex(query), reverse=True, key=lambda x: x[1])
-    results = map(lambda x: (x[0].get_tex(), x[1]), results)
+    results = index.search_tex(query)
     return render_template('results.html', query=query, results=results, num_results=len(results))
 
 
@@ -36,4 +35,6 @@ if __name__ == '__main__':
 
     print('%d expressions in index' % index.get_size())
     
-    app.run(port=9001, host='0.0.0.0', debug=True)
+    port = int(argv[2]) if len(argv) > 2 else 9001
+    
+    app.run(port=port, host='0.0.0.0', debug=True)

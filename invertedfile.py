@@ -17,30 +17,36 @@ class Index:
 
 class PairIndex(Index):
     def __init__(self):
-        self.index = defaultdict(Counter)
+        self.index = defaultdict(list)
         self.trees = []
 
     def get_size(self):
         return len(self.trees)
 
+    def get_tex(self, i):
+        return self.trees[i].get_tex()
+
     def add(self, tree):
         self.trees.append(tree)
         i = len(self.trees) - 1
-        for pair in tree.get_pairs():
-            self.index[pair][i] += 1
+        for pair, count in Counter(tree.get_pairs()).items():
+            self.index[pair].append((i, count))
 
     def search(self, search_tree):
-        results = Counter()
+        match_counts = Counter()
         pairs = list(search_tree.get_pairs());
         for pair, count in Counter(pairs).items():
-            matches = dict(map(lambda x: (x[0], min(x[1], count)), self.index[pair].items()))
-            results.update(matches)
-        for i, count in results.most_common():
+            matches = dict(((i, min(count, index_count)) for i, index_count in self.index[pair]))
+            match_counts.update(matches)
+        results = []
+        for i, count in match_counts.most_common():
             tree = self.trees[i]
             recall = float(count) / len(pairs)
             precision = float(count) / tree.num_pairs
             f_measure = 2 * (precision * recall) / (precision + recall)
-            yield tree, f_measure
+            results.append((tree.get_tex(), f_measure))
+        results.sort(reverse=True, key=lambda x: x[1])
+        return results
 
 class SymbolIndex(Index):
     def __init__(self):
