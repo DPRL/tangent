@@ -5,6 +5,8 @@ import xml.etree.ElementTree as ET
 from collections import deque, Counter
 from sys import argv
 
+ET.register_namespace('', 'http://www.w3.org/1998/Math/MathML')
+
 class MathML:
     math = '{http://www.w3.org/1998/Math/MathML}math'
     mn = '{http://www.w3.org/1998/Math/MathML}mn'
@@ -183,8 +185,23 @@ class SymbolTree:
     def get_symbols(self):
         return self.root.get_symbols()
 
-    def get_tex(self):
-        return '${0}$'.format(self.tex)
+    def get_html(self):
+        if self.tex:
+            return '${0}$'.format(self.tex)
+        else:
+            return self.mathml
+
+    @classmethod
+    def parse(cls, filename):
+        ext = os.path.splitext(filename)[1]
+        if ext == '.tex':
+            with open(filename) as f:
+                return [cls.parse_from_tex(f.read())]
+        elif ext == '.xhtml':
+            return cls.parse_all_from_xml(filename)
+        else:
+            print filename
+            return []
 
     @classmethod
     def parse_from_tex(cls, tex):
@@ -198,7 +215,9 @@ class SymbolTree:
     def parse_from_mathml(cls, elem):
         root = Symbol.parse_from_mathml(elem)
         root.generate_ids()
-        return cls(root)
+        tree = cls(root)
+        tree.mathml = ET.tostring(elem)
+        return tree
 
     @classmethod
     def parse_all_from_xml(cls, filename, missing_tags=None):
@@ -214,7 +233,8 @@ class SymbolTree:
                     if missing_tags is not None:
                         missing_tags.update([e.tag])
                 except Exception as e:
-                    print(e.message)
+                    pass
+                    #print(e.message)
         return trees
 
     @classmethod

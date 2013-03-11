@@ -12,6 +12,11 @@ def root():
     else:
         return home()
 
+@app.route('/initialize')
+def initialize():
+    index.add_directory(argv[1])
+    print('%d expressions in index' % index.get_size())
+
 @app.route('/list')
 def list_all():
     expressions = index.trees[:100]
@@ -27,13 +32,6 @@ def query():
 
 
 if __name__ == '__main__':
-    index.add_directory(argv[1])
-
-    index.add_tex('a^2+b^2=c^2')
-    index.add_tex('a^3+b^3=c^3')
-    index.add_tex('x^2+y^2=z^2')
-
-    print('%d expressions in index' % index.get_size())
     
     port = int(argv[2]) if len(argv) > 2 else 9001
     

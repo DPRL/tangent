@@ -3,17 +3,21 @@ from collections import Counter, defaultdict
 import os
 
 class Index:
-    def add_tex(self, tex):
-        self.add(SymbolTree.parse_from_tex(tex))
-
     def search_tex(self, tex):
         return self.search(SymbolTree.parse_from_tex(tex))
 
+    def add_all(self, trees):
+        for t in trees:
+            self.add(t)
+
     def add_directory(self, directory):
+        all_files = []
         for root, dirs, files in os.walk(directory):
             for filename in files:
-                with open(os.path.join(root, filename)) as f:
-                    self.add_tex(f.read())
+                all_files.extend([os.path.join(root, f) for f in files])
+        for i, f in enumerate(all_files):
+            print('%s (%d/%d)' % (f, i, len(all_files)))
+            self.add_all(SymbolTree.parse(f))
 
 class PairIndex(Index):
     def __init__(self):
@@ -44,7 +48,7 @@ class PairIndex(Index):
             recall = float(count) / len(pairs)
             precision = float(count) / tree.num_pairs
             f_measure = 2 * (precision * recall) / (precision + recall)
-            results.append((tree.get_tex(), f_measure))
+            results.append((tree.get_html(), f_measure))
         results.sort(reverse=True, key=lambda x: x[1])
         return results
 

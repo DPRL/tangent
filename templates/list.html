@@ -14,7 +14,7 @@
         <ul id="results">
         {% for e in expressions %}
             <li class="result">
-                <div class="expression">{{ e.get_tex() }}</div>
+            <div class="expression">{% autoescape false %}{{ e.get_html() }}{% endautoescape %}</div>
             </li>
         {% endfor %}
         </ul>
