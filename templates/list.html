@@ -11,14 +11,16 @@
             <div id="logo">Mathsearch</div>
             <input id="query" value="{{ query }}">
         </div>
-        <ul id="results">
-        {% for e in expressions %}
-            <li class="result">
-            <div class="expression">{% autoescape false %}{{ e.get_html() }}{% endautoescape %}</div>
-            </li>
-        {% endfor %}
-        </ul>
-
+        <div id="body">
+            <h2>List of first 100 expresions in index</h2>
+            <ul id="results">
+            {% for e in expressions %}
+                <li class="result">
+                <div class="expression">{% autoescape false %}{{ e.get_html() }}{% endautoescape %}</div>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
     </body>
 
 </html>

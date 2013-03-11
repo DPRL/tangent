@@ -11,13 +11,7 @@ class Index:
             self.add(t)
 
     def add_directory(self, directory):
-        all_files = []
-        for root, dirs, files in os.walk(directory):
-            for filename in files:
-                all_files.extend([os.path.join(root, f) for f in files])
-        for i, f in enumerate(all_files):
-            print('%s (%d/%d)' % (f, i, len(all_files)))
-            self.add_all(SymbolTree.parse(f))
+        self.add_all(SymbolTree.parse_directory(directory))
 
 class PairIndex(Index):
     def __init__(self):

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from invertedfile import PairIndex, SymbolIndex, CombinationIndex
+from invertedfile import PairIndex, SymbolIndex, CombinationIndex, SymbolTree
 from sys import argv
 
 app = Flask(__name__)
@@ -14,8 +14,9 @@ def root():
 
 @app.route('/initialize')
 def initialize():
-    index.add_directory(argv[1])
-    print('%d expressions in index' % index.get_size())
+    trees, stats = SymbolTree.parse_directory(argv[1])
+    index.add_all(trees)
+    return render_template('initialized.html', stats=stats)
 
 @app.route('/list')
 def list_all():

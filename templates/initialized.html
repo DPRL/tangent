@@ -11,18 +11,10 @@
             <div id="logo">Mathsearch</div>
             <input id="query" value="{{ query }}">
         </div>
+
         <div id="body">
-            <div id="numResults">
-                {{ num_results }} results found.
-            </div>
-            <ul id="results">
-            {% for r in results %}
-                <li class="result">
-                    <div class="expression">{% autoescape false %}{{ r[0] }}{% endautoescape %}</div>
-                    <div class="score">Score: {{ '{:.3f}'.format(r[1]) }}</div>
-                </li>
-            {% endfor %}
-            </ul>
+            <h2>Finished initialization</h2>
+            <p>{{ stats[1] }} expressions from {{ stats[0] }} documents added.</p>
         </div>
 
     </body>

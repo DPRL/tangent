@@ -192,13 +192,13 @@ class SymbolTree:
             return self.mathml
 
     @classmethod
-    def parse(cls, filename):
+    def parse(cls, filename, missing_tags=None):
         ext = os.path.splitext(filename)[1]
         if ext == '.tex':
             with open(filename) as f:
                 return [cls.parse_from_tex(f.read())]
         elif ext == '.xhtml':
-            return cls.parse_all_from_xml(filename)
+            return cls.parse_all_from_xml(filename, missing_tags=missing_tags)
         else:
             print filename
             return []
@@ -262,7 +262,7 @@ class SymbolTree:
             print('%s, %d' % (tag, count))
 
     @classmethod
-    def parse_all(cls, directory):
+    def parse_directory(cls, directory):
         trees = []
         missing_tags = Counter()
         fullnames = []
@@ -271,14 +271,9 @@ class SymbolTree:
 
         for i, fullname in enumerate(fullnames):
             print('parsing %s (%d of %d)' % (fullname, i + 1, len(fullnames)))
-            _, ext = os.path.splitext(fullname)
-            if ext == '.tex':
-                with open(fullname, 'r') as f:
-                    trees.append(parse_from_tex(f.read()))
-            elif ext in ['.xhtml', '.xml', '.mathml']:
-                trees.extend(cls.parse_all_from_xml(fullname, missing_tags=missing_tags))
-        print(missing_tags)
-        return trees
+            trees.extend(cls.parse(fullname, missing_tags=missing_tags))
+        stats = (len(fullnames), len(trees), missing_tags)
+        return trees, stats
 
 
     def __repr__(self):
