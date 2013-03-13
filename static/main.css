@@ -4,6 +4,7 @@ body {
     margin: 0;
     font-family: "Helvetica Neue";
     font-size: 1.4em;
+    color: #222;
 }
 
 /* Common Header */
@@ -86,4 +87,19 @@ body {
 
 .home #query {
     margin-top:15px
+}
+
+/* Default table styles */
+
+table, tr, td {
+    border: 1px solid #ccc;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td {
+    vertical-align: top;
+    padding: 5px;
 }

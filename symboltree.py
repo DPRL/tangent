@@ -174,6 +174,9 @@ class SymbolIterator(object):
         return (elem, h_dist, v_dist)
 
 class SymbolTree:
+
+    __slots__ = ['root', 'num_pairs', 'mathml', 'tex']
+
     def __init__(self, root, tex=None):
         self.root = root
         self.num_pairs = len(list(self.get_pairs()))

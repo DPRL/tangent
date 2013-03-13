@@ -46,6 +46,30 @@ class PairIndex(Index):
         results.sort(reverse=True, key=lambda x: x[1])
         return results
 
+    def listsizes(self, filter_small=True):
+        sizes = [len(l) for l in self.index.values()]
+        if filter_small:
+            avg = float(sum(sizes)) / len(sizes)
+            sizes = [l for l in sizes if l > 2 * avg]
+        sizes.sort(reverse=True)
+        return sizes
+
+    def stats(self):
+        maxLen = 0
+        sumLen = 0
+        for l in self.index.values():
+            length = len(l)
+            if length > maxLen:
+                maxLen = length
+            sumLen += length
+        avgLen = float(sumLen) / len(self.index)
+        return {
+            'Number of expressions': len(self.trees),
+            'Maximum inverted list size': maxLen,
+            'Average inverted list size': avgLen,
+            'Number of inverted lists': len(self.index)
+        }
+
 class SymbolIndex(Index):
     def __init__(self):
         self.index = defaultdict(Counter)
