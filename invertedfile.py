@@ -1,17 +1,45 @@
 from symboltree import SymbolTree
 from collections import Counter, defaultdict
 import os
+import redis
 
 class Index:
     def search_tex(self, tex):
         return self.search(SymbolTree.parse_from_tex(tex))
 
     def add_all(self, trees):
-        for t in trees:
+        l = len(trees)
+        for i, t in enumerate(trees):
+            if i % 1000 == 0:
+                print('%d / %d' % (i, l))
             self.add(t)
 
     def add_directory(self, directory):
-        self.add_all(SymbolTree.parse_directory(directory))
+        self.add_all(SymbolTree.parse_directory(directory)[0])
+
+class RedisIndex(Index):
+    def __init__(self):
+        self.r = redis.StrictRedis()
+        
+    def add(self, tree):
+        id = self.r.incr('num_expr')
+        pipe = self.r.pipeline()
+        pipe.set('text:%d' % id, tree.get_html())
+        for pair in set(tree.get_pairs()):
+            pipe.sadd('pair:%s' % str(pair[:-1]), id)
+        pipe.execute()
+
+    def search(self, search_tree):
+        pipe = self.r.pipeline()
+        match_counts = Counter()
+        for pair in search_tree.get_pairs():
+            pipe.smembers('pair:%s' % str(pair[:-1]))
+        for members in pipe.execute():
+            match_counts.update(members)
+        
+        for pair, count in sorted(Counter(match_counts.most_common()), key=lambda x: x[1], reverse=True)[:10]:
+            yield (self.r.get('text:%s' % pair), count)
+
 
 class PairIndex(Index):
     def __init__(self):

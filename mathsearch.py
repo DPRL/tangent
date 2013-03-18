@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, make_response
-from invertedfile import PairIndex, SymbolIndex, CombinationIndex, SymbolTree
+from invertedfile import RedisIndex, PairIndex, SymbolIndex, CombinationIndex, SymbolTree
 from sys import argv
 
 app = Flask(__name__)
-index = PairIndex()
+index = RedisIndex()
 
 @app.route('/')
 def root():
@@ -14,6 +14,7 @@ def root():
 
 @app.route('/initialize')
 def initialize():
+    index.add(SymbolTree.parse_from_tex('a^2+b^2=c^2'))
     trees, stats = SymbolTree.parse_directory(argv[1])
     index.add_all(trees)
     return render_template('initialized.html', stats=stats)
@@ -32,7 +33,7 @@ def home():
 
 def query():
     query = request.args['query']
-    results = index.search_tex(query)
+    results = list(index.search_tex(query))
     return render_template('results.html', query=query, results=results, num_results=len(results))
 
 @app.route("/listsize.png")
