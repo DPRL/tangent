@@ -2,6 +2,7 @@ import re
 import os
 import subprocess
 import xml.etree.ElementTree as ET
+import StringIO
 from collections import deque, Counter
 from sys import argv
 
@@ -56,37 +57,6 @@ class Symbol:
                 ret.extend(map(mk_helper(v_dist), child.get_symbols()))
                 ret.extend(child.get_pairs())
         return ret
-
-    @classmethod
-    def parse_from_slt(cls, lines):
-        s = cls(lines.popleft().strip())
-        ended = False
-        while not ended:
-            if not lines:
-                ended = True
-            else:
-                next_line = lines[0].strip()
-                if next_line == '::':
-                    lines.popleft()
-                    ended = True
-                elif next_line == ':: REL ^':
-                    if s.above: 
-                        raise Exception
-                    lines.popleft()
-                    lines.popleft()
-                    s.above = cls.parse_from_slt(lines)
-                elif next_line == ':: REL _':
-                    if s.below: 
-                        raise Exception
-                    lines.popleft()
-                    lines.popleft()
-                    s.below = cls.parse_from_slt(lines)
-                else:
-                    if s.next: 
-                        raise Exception
-                    s.next = cls.parse_from_slt(lines)
-                    ended = True
-        return s
 
     @classmethod
     def parse_from_mathml(cls, elem):
@@ -175,12 +145,11 @@ class SymbolIterator(object):
 
 class SymbolTree:
 
-    __slots__ = ['root', 'num_pairs', 'mathml', 'tex']
+    __slots__ = ['root', 'num_pairs', 'mathml']
 
-    def __init__(self, root, tex=None):
+    def __init__(self, root):
         self.root = root
         self.num_pairs = len(list(self.get_pairs()))
-        self.tex = tex
 
     def get_pairs(self):
         return self.root.get_pairs()
@@ -189,10 +158,7 @@ class SymbolTree:
         return self.root.get_symbols()
 
     def get_html(self):
-        if self.tex:
-            return '${0}$'.format(self.tex)
-        else:
-            return self.mathml
+        return self.mathml
 
     @classmethod
     def parse(cls, filename, missing_tags=None):
@@ -208,11 +174,10 @@ class SymbolTree:
 
     @classmethod
     def parse_from_tex(cls, tex):
-        p = subprocess.Popen('txl -q -indent 2 /dev/stdin scripts/FormatModTeX.Txl', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
+        p = subprocess.Popen('latexmlmath -pmml - -', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
         (output, _) = p.communicate(input=tex)
-        t = cls.parse_from_slt(output.splitlines().__iter__())
-        t.tex = tex
-        return t
+        f = StringIO.StringIO(output)
+        return cls.parse_all_from_xml(f)[0]
 
     @classmethod
     def parse_from_mathml(cls, elem):
@@ -239,12 +204,6 @@ class SymbolTree:
                     pass
                     #print(e.message)
         return trees
-
-    @classmethod
-    def parse_from_slt(cls, lines):
-        root = Symbol.parse_from_slt(deque(lines))
-        root.generate_ids()
-        return cls(root)
 
     @classmethod
     def count_tags(cls, directory):
@@ -281,7 +240,7 @@ class SymbolTree:
 
     def __repr__(self):
 
-        return 'SymbolTree({0})'.format(self.mathml if self.mathml else self.tex)
+        return 'SymbolTree({0})'.format(self.mathml)
 
 if __name__ == '__main__':
     trees = SymbolTree.parse_all(argv[1])
