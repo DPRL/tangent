@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, make_response
 from invertedfile import RedisIndex, PairIndex, SymbolIndex, CombinationIndex, SymbolTree
-from sys import argv
+from sys import argv, exit
 
 app = Flask(__name__)
 index = RedisIndex()
@@ -12,12 +12,6 @@ def root():
     else:
         return home()
 
-@app.route('/initialize')
-def initialize():
-    index.add(SymbolTree.parse_from_tex('a^2+b^2=c^2'))
-    trees, stats = SymbolTree.parse_directory(argv[1])
-    index.add_all(trees)
-    return render_template('initialized.html', stats=stats)
 
 @app.route('/stats')
 def stats():
@@ -77,8 +71,23 @@ def listsize():
     response.headers['Content-Type'] = 'image/png'
     return response
 
+def initialize(directory):
+    trees, stats = SymbolTree.parse_directory(directory)
+    index.add_all(trees)
+
+def print_help_and_exit():
+    exit('Usage: python mathsearch.py [port]')
+
 if __name__ == '__main__':
-    
-    port = int(argv[2]) if len(argv) > 2 else 9001
-    
+    port = 9001
+
+    if len(argv) > 1:
+        if argv[1] == 'help':
+            print_help_and_exit()
+        else:
+            try:
+                port = int(argv[1])
+            except:
+                print_help_and_exit()
+
     app.run(port=port, host='0.0.0.0', debug=True)
