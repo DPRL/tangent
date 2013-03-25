@@ -145,7 +145,7 @@ class SymbolIterator(object):
 
 class SymbolTree:
 
-    __slots__ = ['root', 'num_pairs', 'mathml']
+    __slots__ = ['root', 'num_pairs', 'mathml', 'document']
 
     def __init__(self, root):
         self.root = root
@@ -169,7 +169,7 @@ class SymbolTree:
         elif ext == '.xhtml':
             return cls.parse_all_from_xml(filename, missing_tags=missing_tags)
         else:
-            print filename
+            print('Unknown filetype for %s' % filename)
             return []
 
     @classmethod
@@ -193,10 +193,12 @@ class SymbolTree:
         for event, elem in ET.iterparse(filename):
             if event == 'end' and elem.tag == MathML.math:
                 try:
-                    trees.append(cls.parse_from_mathml(elem))
+                    tree = cls.parse_from_mathml(elem)
                     elem.tail = None
                     elem.attrib = {}
-                    trees[-1].mathml = ET.tostring(elem)
+                    tree.mathml = ET.tostring(elem)
+                    tree.document = filename
+                    trees.append(tree)
                 except UnknownTagException as e:
                     if missing_tags is not None:
                         missing_tags.update([e.tag])
