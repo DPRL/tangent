@@ -1,4 +1,4 @@
-from invertedfile import RedisIndex, SymbolTree
+from tangent import RedisIndex, SymbolTree
 from sys import argv, exit
 
 

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, make_response
-from invertedfile import RedisIndex, PairIndex, SymbolIndex, CombinationIndex, SymbolTree
 from sys import argv, exit
+
+from tangent import SymbolTree, RedisIndex
 
 app = Flask(__name__)
 index = RedisIndex()
