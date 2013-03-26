@@ -1,5 +1,5 @@
 from __future__ import division
-from collections import Counter
+from collections import Counter, defaultdict
 from operator import itemgetter
 
 import redis
@@ -35,29 +35,31 @@ class RedisIndex(Index):
             pipe.execute()
 
     def search(self, search_tree):
-        match_counts = Counter()
+        match_lists = defaultdict(list)
         pipe = self.r.pipeline()
-        
+        pairs = [str(pair[:-1]) for pair in search_tree.get_pairs()]
+
         # Get expressions that contain each pair and count them.
-        for pair in search_tree.get_pairs():
-            pipe.smembers('pair:%s:exprs' % str(pair[:-1]))
-        for members in pipe.execute():
-            match_counts.update([int(x) for x in members])
+        for pair in pairs:
+            pipe.smembers('pair:%s:exprs' % pair)
+        for pair, expressions in zip(pairs, pipe.execute()):
+            for e in expressions:
+                match_lists[int(e)].append(pair)
 
         # Get number of pairs in each matched expression.
-        matches = match_counts.most_common()
+        matches = match_lists.items()
         for expr_id, _ in matches:
-            pipe.get('expr:%s:num_pairs' % expr_id)
+            pipe.get('expr:%d:num_pairs' % expr_id)
         counts = [int(x) for x in pipe.execute()]
 
         # Calculate a score for each matched expression.
-        final_matches = ((expr_id, f_measure(num_matches, search_tree.num_pairs, result_size))
-                         for (expr_id, num_matches), result_size
+        final_matches = ((expr_id, f_measure(len(match_pairs), search_tree.num_pairs, result_size), match_pairs)
+                         for (expr_id, match_pairs), result_size
                          in zip(matches, counts))
 
         # Get MathML source for expressions to return.
-        for expr_id, count in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
-            yield (self.r.get('expr:%s:text' % expr_id), count, self.r.smembers('expr:%s:doc' % expr_id))
+        for expr_id, count, match_pairs in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
+            yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.r.smembers('expr:%s:doc' % expr_id))
 
     def exact_search(self, search_tree):
         pairs = ['pair:%s:exprs' % str(pair[:-1]) for pair in search_tree.get_pairs()]
