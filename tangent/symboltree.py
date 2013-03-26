@@ -81,7 +81,7 @@ class Symbol:
             return cls(elem.text)
         elif elem.tag == MathML.msub:
             children = map(cls.parse_from_mathml, elem)
-            children[0].above = children[1]
+            children[0].below = children[1]
             return children[0]
         elif elem.tag == MathML.msup:
             children = map(cls.parse_from_mathml, elem)
