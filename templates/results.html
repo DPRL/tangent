@@ -20,6 +20,9 @@
                 <li class="result">
                     <div class="expression">{% autoescape false %}{{ r[0] }}{% endautoescape %}</div>
                     <div class="score">Score: {{ '{:.3f}'.format(r[1]) }}</div>
+                    {% for d in r[2] %}
+                        <div class="score">Document: {{ d }}</div>
+                    {% endfor %}
                 </li>
             {% endfor %}
             </ul>

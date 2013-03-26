@@ -166,7 +166,7 @@ class SymbolTree:
         if ext == '.tex':
             with open(filename) as f:
                 return [cls.parse_from_tex(f.read())]
-        elif ext == '.xhtml':
+        elif ext in {'.xhtml', '.mathml'}:
             return cls.parse_all_from_xml(filename, missing_tags=missing_tags)
         else:
             print('Unknown filetype for %s' % filename)
