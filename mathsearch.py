@@ -1,10 +1,18 @@
-from flask import Flask, render_template, request, make_response
+import time
 from sys import argv, exit
+
+from flask import Flask, render_template, request, make_response
 
 from tangent import SymbolTree, RedisIndex
 
 app = Flask(__name__)
 index = RedisIndex()
+
+def time_it(fn, *args):
+    start = time.time()
+    ret = fn(*args)
+    end = time.time()
+    return ((end - start) * 1000, ret)
 
 @app.route('/')
 def root():
@@ -12,7 +20,6 @@ def root():
         return query()
     else:
         return home()
-
 
 @app.route('/stats')
 def stats():
@@ -28,8 +35,9 @@ def home():
 
 def query():
     query = request.args['query']
-    results = list(index.search_tex(query))
-    return render_template('results.html', query=query, results=results, num_results=len(results))
+    parse_time, tree = time_it(SymbolTree.parse_from_tex, query)
+    search_time, results = time_it(lambda: list(index.search(tree)))
+    return render_template('results.html', query=query, results=results, num_results=len(results), parse_time=parse_time, search_time=search_time)
 
 @app.route("/listsize.png")
 def listsize():

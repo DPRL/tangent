@@ -13,7 +13,10 @@
         </div>
         <div id="body">
             <div id="numResults">
-                {{ num_results }} results found.
+                {{ num_results }} results found in
+                {{ '{:.0f}'.format(search_time + parse_time) }} ms
+                ({{ '{:.0f}'.format(parse_time) }} ms parsing,
+                {{ '{:.0f}'.format(search_time) }} ms searching).
             </div>
             <ul id="results">
             {% for r in results %}
