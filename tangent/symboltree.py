@@ -71,7 +71,10 @@ class Symbol:
         elif elem.tag == MathML.mrow:
             children = map(cls.parse_from_mathml, elem)
             for i in range(1, len(children)):
-                children[i - 1].next = children[i]
+                elem = children[i - 1]
+                while elem.next:
+                    elem = elem.next
+                elem.next = children[i]
             return children[0]
         elif elem.tag == MathML.mn:
             return cls(elem.text)
