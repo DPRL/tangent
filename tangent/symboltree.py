@@ -21,6 +21,8 @@ class MathML:
     mroot = '{http://www.w3.org/1998/Math/MathML}mroot'
     mfrac = '{http://www.w3.org/1998/Math/MathML}mfrac'
     mfenced = '{http://www.w3.org/1998/Math/MathML}mfenced'
+    mover = '{http://www.w3.org/1998/Math/MathML}mover'
+    munder = '{http://www.w3.org/1998/Math/MathML}munder'
 
 class UnknownTagException(Exception):
     def __init__(self, tag):
@@ -94,6 +96,14 @@ class Symbol:
             children = map(cls.parse_from_mathml, elem)
             children[0].above = children[1]
             children[0].below = children[2]
+            return children[0]
+        elif elem.tag == MathML.mover:
+            children = map(cls.parse_from_mathml, elem)
+            children[0].above = children[1]
+            return children[0]
+        elif elem.tag == MathML.munder:
+            children = map(cls.parse_from_mathml, elem)
+            children[0].below = children[1]
             return children[0]
         elif elem.tag == MathML.msqrt:
             raise Exception('msqrt unimplemented')
@@ -169,7 +179,7 @@ class SymbolTree:
         if ext == '.tex':
             with open(filename) as f:
                 return [cls.parse_from_tex(f.read())]
-        elif ext in {'.xhtml', '.mathml'}:
+        elif ext in {'.xhtml', '.mathml', '.mml'}:
             return cls.parse_all_from_xml(filename, missing_tags=missing_tags)
         else:
             print('Unknown filetype for %s' % filename)
