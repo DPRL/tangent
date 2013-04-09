@@ -4,11 +4,15 @@ from operator import itemgetter
 
 import redis
 
-from tangent import Index
+from tangent import Index, FMeasureRanker
 
 class RedisIndex(Index):
-    def __init__(self):
+    def __init__(self, ranker=None):
         self.r = redis.StrictRedis()
+        if ranker:
+            self.ranker = ranker
+        else:
+            self.ranker = FMeasureRanker()
         
     def add(self, tree):
         # Check if expression is in the index.
@@ -20,7 +24,7 @@ class RedisIndex(Index):
             # Get a unique id for the expression.
             expr_id = self.r.incr('next_expr_id')
 
-            pairs = set(tree.get_pairs())
+            pairs = set(self.ranker.get_atoms(tree))
             pipe = self.r.pipeline()
 
             # Insert the source text and number of pairs of the expression.
@@ -30,14 +34,14 @@ class RedisIndex(Index):
             
             # Insert each pair.
             for pair in pairs:
-                pipe.sadd('pair:%s:exprs' % str(pair[:-1]), expr_id)
+                pipe.sadd('pair:%s:exprs' % pair, expr_id)
 
             pipe.execute()
 
     def search(self, search_tree):
         match_lists = defaultdict(list)
         pipe = self.r.pipeline()
-        pairs = [str(pair[:-1]) for pair in search_tree.get_pairs()]
+        pairs = list(self.ranker.get_atoms(search_tree))
 
         # Get expressions that contain each pair and count them.
         for pair in pairs:
@@ -62,7 +66,7 @@ class RedisIndex(Index):
             yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.r.smembers('expr:%s:doc' % expr_id))
 
     def exact_search(self, search_tree):
-        pairs = ['pair:%s:exprs' % str(pair[:-1]) for pair in search_tree.get_pairs()]
+        pairs = ['pair:%s:exprs' % pair for pair in self.ranker.get_atoms(search_tree)]
 
         # Get the expressions that contain all pairs.
         if len(pairs) == 0:
