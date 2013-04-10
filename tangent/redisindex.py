@@ -57,7 +57,9 @@ class RedisIndex(Index):
         counts = [int(x) for x in pipe.execute()]
 
         # Calculate a score for each matched expression.
-        final_matches = ((expr_id, f_measure(len(match_pairs), search_tree.num_pairs, result_size), match_pairs)
+        final_matches = ((expr_id, 
+                          self.ranker.rank(match_pairs, search_tree.num_pairs, result_size),
+                          match_pairs)
                          for (expr_id, match_pairs), result_size
                          in zip(matches, counts))
 
@@ -90,9 +92,3 @@ class RedisIndex(Index):
                 return expr_id
         else:
             return None
-        
-
-def f_measure(num_matches, search_size, result_size):
-    precision = num_matches / result_size
-    recall = num_matches / search_size
-    return 2 * (precision * recall) / (precision + recall)
