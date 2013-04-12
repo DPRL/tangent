@@ -3,8 +3,12 @@ class FMeasureRanker(object):
 
     @staticmethod
     def get_atoms(tree):
-        for s1, s2, dh, dv, _ in tree.get_pairs():
-            yield str((s1, s2, dh, dv))
+        pairs = []
+        extras = []
+        for s1, s2, dh, dv, path in tree.get_pairs():
+            pairs.append('|'.join(map(unicode, [s1, s2, dh, dv])))
+            extras.append(''.join(map(str, path)))
+        return pairs, extras
 
     @staticmethod
     def rank(matches, search_size, result_size):

@@ -1,6 +1,7 @@
 from __future__ import division
 from collections import Counter, defaultdict
 from operator import itemgetter
+from itertools import izip_longest
 
 import redis
 
@@ -24,7 +25,7 @@ class RedisIndex(Index):
             # Get a unique id for the expression.
             expr_id = self.r.incr('next_expr_id')
 
-            pairs = set(self.ranker.get_atoms(tree))
+            pairs, extras = self.ranker.get_atoms(tree)
             pipe = self.r.pipeline()
 
             # Insert the source text and number of pairs of the expression.
@@ -33,22 +34,30 @@ class RedisIndex(Index):
             pipe.sadd('expr:%d:doc' % expr_id, tree.document)
             
             # Insert each pair.
-            for pair in pairs:
-                pipe.sadd('pair:%s:exprs' % pair, expr_id)
+            for pair, extra in izip_longest(pairs, extras):
+                if extra:
+                    value = '%d:%s' % (expr_id, extra)
+                else:
+                    value = expr_id
+                pipe.sadd('pair:%s:exprs' % pair, value)
 
             pipe.execute()
 
     def search(self, search_tree):
         match_lists = defaultdict(list)
         pipe = self.r.pipeline()
-        pairs = list(self.ranker.get_atoms(search_tree))
+        pairs, _ = self.ranker.get_atoms(search_tree)
 
         # Get expressions that contain each pair and count them.
         for pair in pairs:
             pipe.smembers('pair:%s:exprs' % pair)
         for pair, expressions in zip(pairs, pipe.execute()):
             for e in expressions:
-                match_lists[int(e)].append(pair)
+                if ':' in e:
+                    exp, extra = e.split(':')
+                    match_lists[int(exp)].append((pair, extra))
+                else:
+                    match_lists[int(e)].append((pair, None))
 
         # Get number of pairs in each matched expression.
         matches = match_lists.items()
@@ -65,30 +74,13 @@ class RedisIndex(Index):
 
         # Get MathML source for expressions to return.
         for expr_id, count, match_pairs in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
-            yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.r.smembers('expr:%s:doc' % expr_id))
+            yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.r.smembers('expr:%s:doc' % expr_id), expr_id)
 
     def exact_search(self, search_tree):
-        pairs = ['pair:%s:exprs' % pair for pair in self.ranker.get_atoms(search_tree)]
-
-        # Get the expressions that contain all pairs.
-        if len(pairs) == 0:
-            return None
-        elif len(pairs) == 1:
-            match_ids = self.r.smembers(pairs[0])
-        else:
-            match_ids = self.r.sinter(*pairs)
-            
-        # If no such expressions, return None.
-        if len(match_ids) <= 0:
-            return None
-
-        # Find an expression that has exactly as many pairs.
-        pipe = self.r.pipeline()
-        for expr_id in match_ids:
-            pipe.get('expr:%s:num_pairs' % expr_id)
-        counts = [int(x) for x in pipe.execute()]
-        for expr_id, count in zip(match_ids, counts):
-            if count == len(pairs):
+        try:
+            results = self.search(search_tree).__iter__()
+            _, score, _, _, expr_id = results.next()
+            if score >= 1:
                 return expr_id
-        else:
+        except StopIteration:
             return None
