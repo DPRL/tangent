@@ -32,6 +32,9 @@ class RedisIndex(Index):
             pipe.set('expr:%d:text' % expr_id, tree.get_html())
             pipe.set('expr:%d:num_pairs' % expr_id, len(pairs))
             pipe.sadd('expr:%d:doc' % expr_id, tree.document)
+
+            # Create an index from tree to its id, so we can do exact search.
+            pipe.set(u'tree:%s' % tree.build_repr(), expr_id)
             
             # Insert each pair.
             for pair, extra in izip_longest(pairs, extras):
@@ -77,10 +80,4 @@ class RedisIndex(Index):
             yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.r.smembers('expr:%s:doc' % expr_id), expr_id)
 
     def exact_search(self, search_tree):
-        try:
-            results = self.search(search_tree).__iter__()
-            _, score, _, _, expr_id = results.next()
-            if score >= 1:
-                return expr_id
-        except StopIteration:
-            return None
+        return self.r.get(u'tree:%s' % search_tree.build_repr())
