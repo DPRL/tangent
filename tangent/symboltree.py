@@ -37,6 +37,20 @@ class Symbol:
         self.below = below
         self.id = None
 
+    def build_repr(self, builder):
+        builder.append('(')
+        builder.append(self.tag)
+        if self.next:
+            builder.append(',next=')
+            self.next.build_repr(builder)
+        if self.above:
+            builder.append(',above=')
+            self.above.build_repr(builder)
+        if self.below:
+            builder.append(',below=')
+            self.below.build_repr(builder)
+        builder.append(')')
+
     def get_symbols(self):
         return SymbolIterator(self)
 
@@ -253,9 +267,11 @@ class SymbolTree:
         return trees, stats
 
 
-    def __repr__(self):
-
-        return 'SymbolTree({0})'.format(self.mathml)
+    def build_repr(self):
+        builder = []
+        self.root.build_repr(builder)
+        builder = [b for b in builder if b]
+        return u'SymbolTree(%s)' % u''.join(builder)
 
 if __name__ == '__main__':
     trees = SymbolTree.parse_all(argv[1])
