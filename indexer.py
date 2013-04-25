@@ -1,9 +1,11 @@
-from tangent import RedisIndex, SymbolTree
 from sys import argv, exit
 
+from werkzeug.utils import import_string
 
-def index(directory):
-    index = RedisIndex()
+from tangent import RedisIndex, SymbolTree
+
+def index(config, directory):
+    index = RedisIndex(db=config.DATABASE, ranker=config.RANKER)
     trees, (num_files, num_expressions, missing_tags) = SymbolTree.parse_directory(directory)
     index.add_all(trees)
 
@@ -15,15 +17,17 @@ def index(directory):
         
 
 def print_help_and_exit():
-    exit('Usage: python index.py <directory> [<directory2> ..]')
+    exit('Usage: python index.py config_object <directory> [<directory2> ..]')
 
 if __name__ == '__main__':
 
-    if len(argv) > 1:
+    if len(argv) > 2:
         if argv[1] == 'help':
             print_help_and_exit()
         else:
-            for directory in argv[1:]:
-                index(directory)
+            config = import_string(argv[1])
+
+            for directory in argv[2:]:
+                index(config, directory)
     else:
         print_help_and_exit()

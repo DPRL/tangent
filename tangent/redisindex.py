@@ -8,8 +8,8 @@ import redis
 from tangent import Index, FMeasureRanker
 
 class RedisIndex(Index):
-    def __init__(self, ranker=None):
-        self.r = redis.StrictRedis()
+    def __init__(self, ranker=None, db=0):
+        self.r = redis.StrictRedis(db=db)
         if ranker:
             self.ranker = ranker
         else:
@@ -25,12 +25,12 @@ class RedisIndex(Index):
             # Get a unique id for the expression.
             expr_id = self.r.incr('next_expr_id')
 
-            pairs, extras = self.ranker.get_atoms(tree)
+            pairs, extras, num_atoms = self.ranker.get_atoms(tree)
             pipe = self.r.pipeline()
 
             # Insert the source text and number of pairs of the expression.
             pipe.set('expr:%d:text' % expr_id, tree.get_html())
-            pipe.set('expr:%d:num_pairs' % expr_id, len(pairs))
+            pipe.set('expr:%d:num_pairs' % expr_id, num_atoms)
             pipe.sadd('expr:%d:doc' % expr_id, tree.document)
 
             # Create an index from tree to its id, so we can do exact search.
@@ -49,7 +49,7 @@ class RedisIndex(Index):
     def search(self, search_tree):
         match_lists = defaultdict(list)
         pipe = self.r.pipeline()
-        pairs, _ = self.ranker.get_atoms(search_tree)
+        pairs, _, num_atoms= self.ranker.get_atoms(search_tree)
 
         # Get expressions that contain each pair and count them.
         for pair in pairs:
@@ -66,11 +66,11 @@ class RedisIndex(Index):
         matches = match_lists.items()
         for expr_id, _ in matches:
             pipe.get('expr:%d:num_pairs' % expr_id)
-        counts = [int(x) for x in pipe.execute()]
+        counts = [float(x) for x in pipe.execute()]
 
         # Calculate a score for each matched expression.
         final_matches = ((expr_id, 
-                          self.ranker.rank(match_pairs, search_tree.num_pairs, result_size),
+                          self.ranker.rank(match_pairs, num_atoms, result_size),
                           match_pairs)
                          for (expr_id, match_pairs), result_size
                          in zip(matches, counts))

@@ -6,7 +6,10 @@ from flask import Flask, render_template, request, make_response
 from tangent import SymbolTree, RedisIndex
 
 app = Flask(__name__)
-index = RedisIndex()
+if len(argv) > 1:
+    app.config.from_object(argv[1])
+
+index = RedisIndex(db=app.config['DATABASE'], ranker=app.config['RANKER'])
 
 def time_it(fn, *args):
     start = time.time()
@@ -85,7 +88,7 @@ def initialize(directory):
     index.add_all(trees)
 
 def print_help_and_exit():
-    exit('Usage: python mathsearch.py [port]')
+    exit('Usage: python mathsearch.py config_object')
 
 if __name__ == '__main__':
     port = 9001
@@ -95,8 +98,9 @@ if __name__ == '__main__':
             print_help_and_exit()
         else:
             try:
-                port = int(argv[1])
+                port = int(app.config['PORT'])
+                host = app.config['HOST']
             except:
                 print_help_and_exit()
 
-    app.run(port=port, host='0.0.0.0', debug=True)
+    app.run(port=port, host=host)
