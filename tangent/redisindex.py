@@ -49,7 +49,8 @@ class RedisIndex(Index):
     def search(self, search_tree):
         match_lists = defaultdict(list)
         pipe = self.r.pipeline()
-        pairs, _, num_atoms= self.ranker.get_atoms(search_tree)
+        pairs, extras, num_atoms= self.ranker.get_atoms(search_tree)
+        search_extras = dict(zip(pairs, extras))
 
         # Get expressions that contain each pair and count them.
         for pair in pairs:
@@ -70,7 +71,7 @@ class RedisIndex(Index):
 
         # Calculate a score for each matched expression.
         final_matches = ((expr_id, 
-                          self.ranker.rank(match_pairs, num_atoms, result_size),
+                          self.ranker.rank(match_pairs, search_extras, num_atoms, result_size),
                           match_pairs)
                          for (expr_id, match_pairs), result_size
                          in zip(matches, counts))
