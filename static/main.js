@@ -14,4 +14,8 @@ $(function() {
         submitQuery();
       }
     });
+
+    $('.result').click(function() {
+        $(this).toggleClass('selected');
+    });
 });

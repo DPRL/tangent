@@ -61,16 +61,34 @@ body {
 }
 
 .result {
-    padding: 15px 0;
+    padding: 5px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.result:hover {
+    background: #e4e4e4;
 }
 
 .expression {
     margin-bottom: 5px;
 }
 
-.score {
+.info {
     font-size: 0.8em;
     color: #999;
+}
+
+.extra {
+    display: none;
+}
+
+.selected {
+    background: #e4e4e4;
+}
+
+.selected .extra {
+    display: block;
 }
 
 /* Home page search box */

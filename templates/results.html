@@ -22,14 +22,16 @@
             {% for r in results %}
                 <li class="result">
                     <div class="expression">{% autoescape false %}{{ r[0] }}{% endautoescape %}</div>
-                    <div class="score">Score: {{ '{:.3f}'.format(r[1]) }}</div>
-                    {% for d in r[3] %}
-                        <div class="score">Document: {{ d }}</div>
-                    {% endfor %}
-                    <div class="score">Pairs: 
-                        {% for p in r[2] %}
-                            {{ p }}, 
+                    <div class="moreInfo">
+                        <div class="info">Score: {{ '{:.3f}'.format(r[1]) }}</div>
+                        {% for d in r[3] %}
+                            <div class="info extra">Document: {{ d }}</div>
                         {% endfor %}
+                        <div class="info extra">Pairs: 
+                            {% for p in r[2] %}
+                                {{ p }}, 
+                            {% endfor %}
+                        </div>
                     </div>
                 </li>
             {% endfor %}
