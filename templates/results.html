@@ -24,8 +24,9 @@
                     <div class="expression">{% autoescape false %}{{ r[0] }}{% endautoescape %}</div>
                     <div class="moreInfo">
                         <div class="info">Score: {{ '{:.3f}'.format(r[1]) }}</div>
-                        {% for d in r[3] %}
-                            <div class="info extra">Document: {{ d }}</div>
+                        <div class="info">Document: <a href="{{ r[3][0] }}">{{ r[3][0] }}</a></div>
+                        {% for d in r[3][1:] %}
+                            <div class="info extra">Document: <a href="{{ d }}">{{ d }}</a></div>
                         {% endfor %}
                         <div class="info extra">Pairs: 
                             {% for p in r[2] %}

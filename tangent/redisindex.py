@@ -2,6 +2,7 @@ from __future__ import division
 from collections import Counter, defaultdict
 from operator import itemgetter
 from itertools import izip_longest
+import re
 
 import redis
 
@@ -78,7 +79,18 @@ class RedisIndex(Index):
 
         # Get MathML source for expressions to return.
         for expr_id, count, match_pairs in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
-            yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.r.smembers('expr:%s:doc' % expr_id), expr_id)
+            yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.get_document_links(expr_id), expr_id)
 
     def exact_search(self, search_tree):
         return self.r.get(u'tree:%s' % search_tree.build_repr())
+
+    def get_document_links(self, expr_id):
+        docs = self.r.smembers('expr:%s:doc' % expr_id)
+        return [self.create_document_link(d) for d in docs]
+
+    def create_document_link(self, path):
+        match = re.search(r'(/\d\d\d\d/.*)', path)
+        if match:
+            return 'http://saskatoon.cs.rit.edu/mrec' +  match.group()
+        else:
+            return path
