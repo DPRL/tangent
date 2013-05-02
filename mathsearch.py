@@ -1,5 +1,6 @@
 import time
 from sys import argv, exit
+import os
 
 from flask import Flask, render_template, request, make_response
 
@@ -8,6 +9,11 @@ from tangent import SymbolTree, RedisIndex
 app = Flask(__name__)
 if len(argv) > 1:
     app.config.from_object(argv[1])
+elif 'TANGENT_CONFIG' in os.environ:
+    app.config.from_object(os.environ['TANGENT_CONFIG'])
+else:
+    print('Couldn\'t load config file')
+    exit(0)
 
 index = RedisIndex(db=app.config['DATABASE'], ranker=app.config['RANKER'])
 
@@ -91,16 +97,12 @@ def print_help_and_exit():
     exit('Usage: python mathsearch.py config_object')
 
 if __name__ == '__main__':
-    port = 9001
-
     if len(argv) > 1:
         if argv[1] == 'help':
             print_help_and_exit()
-        else:
-            try:
-                port = int(app.config['PORT'])
-                host = app.config['HOST']
-            except:
-                print_help_and_exit()
-
-    app.run(port=port, host=host)
+    try:
+        port = int(app.config['PORT'])
+        host = app.config['HOST']
+        app.run(port=port, host=host)
+    except:
+        print_help_and_exit()
