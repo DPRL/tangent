@@ -15,7 +15,10 @@ $(function() {
       }
     });
 
-    $('.result').click(function() {
+    $('.result').click(function(e) {
         $(this).toggleClass('selected');
+    });
+    $('.result a').click(function(e) {
+        e.stopPropagation();
     });
 });
