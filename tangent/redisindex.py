@@ -6,7 +6,7 @@ import re
 
 import redis
 
-from tangent import Index, FMeasureRanker
+from tangent import Index, Result, FMeasureRanker
 
 class RedisIndex(Index):
     def __init__(self, ranker=None, db=0):
@@ -79,7 +79,11 @@ class RedisIndex(Index):
 
         # Get MathML source for expressions to return.
         for expr_id, count, match_pairs in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
-            yield (self.r.get('expr:%s:text' % expr_id), count, match_pairs, self.get_document_links(expr_id), expr_id)
+            yield Result(mathml=self.r.get('expr:%s:text' % expr_id),
+                         score=count,
+                         debug_info=['Pairs: %s' % match_pairs],
+                         links=self.get_document_links(expr_id),
+                         expr_id=expr_id)
 
     def exact_search(self, search_tree):
         return self.r.get(u'tree:%s' % search_tree.build_repr())

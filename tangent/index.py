@@ -1,4 +1,5 @@
 from __future__ import division
+from collections import namedtuple
 
 from tangent import SymbolTree
 
@@ -15,3 +16,5 @@ class Index:
 
     def add_directory(self, directory):
         self.add_all(SymbolTree.parse_directory(directory)[0])
+
+Result = namedtuple('Result', ['mathml', 'score', 'debug_info', 'links', 'expr_id'])
