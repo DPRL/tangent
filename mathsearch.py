@@ -1,6 +1,7 @@
 import time
 from sys import argv, exit
 import os
+from operator import itemgetter
 
 from flask import Flask, render_template, request, make_response
 
@@ -45,8 +46,11 @@ def home():
 def query():
     query = request.args['query']
     parse_time, tree = time_it(SymbolTree.parse_from_tex, query)
-    search_time, results = time_it(lambda: list(index.search(tree)))
-    return render_template('results.html', query=query, results=results, num_results=len(results), parse_time=parse_time, search_time=search_time)
+    search_time, (results, num_results, pair_counts) = time_it(lambda: list(index.search(tree)))
+    pair_count_str = u''
+    for p, c in sorted(pair_counts.items(), reverse=True, key=itemgetter(1)):
+        pair_count_str += u'%s: %d, ' % (p, c)
+    return render_template('results.html', query=query, results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time)
 
 @app.route("/listsize.png")
 def listsize():

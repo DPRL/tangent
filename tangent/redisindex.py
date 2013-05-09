@@ -52,11 +52,13 @@ class RedisIndex(Index):
         pipe = self.r.pipeline()
         pairs, extras, num_atoms= self.ranker.get_atoms(search_tree)
         search_extras = dict(zip(pairs, extras))
+        pair_counts = dict()
 
         # Get expressions that contain each pair and count them.
         for pair in pairs:
             pipe.smembers('pair:%s:exprs' % pair)
         for pair, expressions in zip(pairs, pipe.execute()):
+            pair_counts[pair] = len(expressions)
             for e in expressions:
                 if ':' in e:
                     exp, extra = e.split(':')
@@ -78,12 +80,14 @@ class RedisIndex(Index):
                          in zip(matches, counts))
 
         # Get MathML source for expressions to return.
+        results = []
         for expr_id, count, match_pairs in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
-            yield Result(mathml=self.r.get('expr:%s:text' % expr_id),
-                         score=count,
-                         debug_info=['Pairs: %s' % match_pairs],
-                         links=self.get_document_links(expr_id),
-                         expr_id=expr_id)
+            results.append(Result(mathml=self.r.get('expr:%s:text' % expr_id),
+                                  score=count,
+                                  debug_info=['Pairs: %s' % match_pairs],
+                                  links=self.get_document_links(expr_id),
+                                  expr_id=expr_id))
+        return results, len(matches), pair_counts
 
     def exact_search(self, search_tree):
         return self.r.get(u'tree:%s' % search_tree.build_repr())

@@ -17,6 +17,8 @@
                 {{ '{:.0f}'.format(search_time + parse_time) }} ms
                 ({{ '{:.0f}'.format(parse_time) }} ms parsing,
                 {{ '{:.0f}'.format(search_time) }} ms searching).
+                <br>
+                Pair counts: {{ pair_counts }}
             </div>
             <ul id="results">
             {% for r in results %}
