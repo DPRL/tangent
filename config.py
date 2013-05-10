@@ -22,5 +22,5 @@ class RecallConfig(Config):
 
 class PrefixConfig(Config):
     RANKER = PrefixRanker()
-    DATABASE = 2
+    DATABASE = 0
     PORT = 9005

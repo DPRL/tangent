@@ -85,7 +85,7 @@ class Symbol:
             else:
                 raise Exception('math element with more than 1 child')
         elif elem.tag == MathML.mrow:
-            children = map(cls.parse_from_mathml, elem)
+            children = filter(lambda x: x.tag != u'\u2062', map(cls.parse_from_mathml, elem))
             for i in range(1, len(children)):
                 elem = children[i - 1]
                 while elem.next:
