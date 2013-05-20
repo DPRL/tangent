@@ -14,7 +14,7 @@ class DistanceRanker(object):
 
 
     @staticmethod
-    def rank(match_pairs, search_pairs, search_size, result_size):
+    def rank(match_pairs, search_pairs, search_size, result_size, pair_counts, total_exprs):
         count = 0.0
         for match in match_pairs:
             _, _, dh, _ = match[0].split('|')

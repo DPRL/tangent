@@ -104,9 +104,7 @@ if __name__ == '__main__':
     if len(argv) > 1:
         if argv[1] == 'help':
             print_help_and_exit()
-    try:
-        port = int(app.config['PORT'])
-        host = app.config['HOST']
-        app.run(port=port, host=host)
-    except:
-        print_help_and_exit()
+
+    port = int(app.config['PORT'])
+    host = app.config['HOST']
+    app.run(port=port, host=host)

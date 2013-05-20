@@ -11,7 +11,7 @@ class FMeasureRanker(object):
         return pairs, extras, len(pairs)
 
     @staticmethod
-    def rank(match_pairs, search_pairs, search_size, result_size):
+    def rank(match_pairs, search_pairs, search_size, result_size, pair_counts, total_exprs):
         num_matches = len(match_pairs)
         if num_matches == 0:
             return 0.0

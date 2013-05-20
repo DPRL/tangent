@@ -16,7 +16,7 @@ class PrefixRanker(object):
         return pairs, extras, len(pairs)
 
     @staticmethod
-    def rank(match_pairs, search_extras, search_size, result_size):
+    def rank(match_pairs, search_extras, search_size, result_size, pair_counts, total_exprs):
         matches = Counter()
         for pair, path in match_pairs:
             search_path = search_extras[pair]

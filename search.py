@@ -6,8 +6,8 @@ from tangent import RedisIndex, SymbolTree
 
 def search(config, query):
     index = RedisIndex(db=config.DATABASE, ranker=config.RANKER)
-    results = index.search_tex(query)
-    first = results.next()
+    results, _, _ = index.search_tex(query)
+    first = results[0]
     print(first[0])
         
 

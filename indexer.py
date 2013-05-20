@@ -8,6 +8,7 @@ def index(config, directory):
     index = RedisIndex(db=config.DATABASE, ranker=config.RANKER)
     trees, (num_files, num_expressions, missing_tags) = SymbolTree.parse_directory(directory)
     index.add_all(trees)
+    index.second_pass()
 
     print('')
     print('Added %d expressions from %d documents' % (num_expressions, num_files))

@@ -37,7 +37,7 @@ class RedisIndex(Index):
             # Create an index from tree to its id, so we can do exact search.
             pipe.set(u'tree:%s' % tree.build_repr(), expr_id)
             
-            # Insert each pair.
+            # Insert each pair in the inverted lists.
             for pair, extra in izip_longest(pairs, extras):
                 if extra:
                     value = '%d:%s' % (expr_id, extra)
@@ -45,14 +45,19 @@ class RedisIndex(Index):
                     value = expr_id
                 pipe.sadd('pair:%s:exprs' % pair, value)
 
+            # Create set of all pairs.
+            for p in pairs:
+                self.r.sadd('expr:%d:all_pairs' % expr_id, p)
+
             pipe.execute()
 
     def search(self, search_tree):
         match_lists = defaultdict(list)
         pipe = self.r.pipeline()
         pairs, extras, num_atoms= self.ranker.get_atoms(search_tree)
-        search_extras = dict(zip(pairs, extras))
+        search_extras = dict(izip_longest(pairs, extras))
         pair_counts = dict()
+        total_exprs = int(self.r.get('next_expr_id'))
 
         # Get expressions that contain each pair and count them.
         for pair in pairs:
@@ -74,7 +79,7 @@ class RedisIndex(Index):
 
         # Calculate a score for each matched expression.
         final_matches = ((expr_id, 
-                          self.ranker.rank(match_pairs, search_extras, num_atoms, result_size),
+                          self.ranker.rank(match_pairs, search_extras, num_atoms, result_size, pair_counts, total_exprs),
                           match_pairs)
                          for (expr_id, match_pairs), result_size
                          in zip(matches, counts))
@@ -88,6 +93,13 @@ class RedisIndex(Index):
                                   links=self.get_document_links(expr_id),
                                   expr_id=expr_id))
         return results, len(matches), pair_counts
+
+    def second_pass(self):
+        try:
+            self.ranker.second_pass(self.r)
+        except AttributeError:
+            # Ranker does not have a second pass method, so do nothing.
+            pass
 
     def exact_search(self, search_tree):
         return self.r.get(u'tree:%s' % search_tree.build_repr())

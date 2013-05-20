@@ -17,4 +17,7 @@ class Index:
     def add_directory(self, directory):
         self.add_all(SymbolTree.parse_directory(directory)[0])
 
+    def second_pass():
+        pass
+
 Result = namedtuple('Result', ['mathml', 'score', 'debug_info', 'links', 'expr_id'])
