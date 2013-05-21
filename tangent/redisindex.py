@@ -48,6 +48,7 @@ class RedisIndex(Index):
             # Create set of all pairs.
             for p in pairs:
                 self.r.sadd('expr:%d:all_pairs' % expr_id, p)
+                self.r.sadd('all_pairs', p)
 
             pipe.execute()
 

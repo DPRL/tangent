@@ -1,8 +1,9 @@
 from __future__ import division
 from math import log
+from itertools import izip
 
 def idf(counts, total):
-    return sum(log(total / c, 10) for c in counts)
+    return sum(log(total / (c + 1), 10) for c in counts)
 
 class TfIdfRanker(object):
 
@@ -21,12 +22,14 @@ class TfIdfRanker(object):
 
     @staticmethod
     def second_pass(db):
+        pipe = db.pipeline()
+        all_pairs = list(db.smembers('all_pairs'))
+        for p in all_pairs:
+            pipe.scard('pair:%s:exprs' % p)
+        all_counts = dict((pair, int(count)) for (pair, count) in izip(all_pairs, pipe.execute()))
+
         num_exprs = int(db.get('next_expr_id'))
         for i in range(num_exprs):
             pairs = db.smembers('expr:%d:all_pairs' % i)
-            pipe = db.pipeline()
-            for p in pairs:
-                pipe.scard('pair:%s:exprs' % p)
-            counts = map(int, pipe.execute())
-             
+            counts = (all_counts[p] for p in pairs)
             db.set('expr:%d:num_pairs' % i, idf(counts, num_exprs))
