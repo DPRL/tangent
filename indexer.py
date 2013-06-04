@@ -3,32 +3,52 @@ from sys import argv, exit
 from werkzeug.utils import import_string
 
 from tangent import RedisIndex, SymbolTree
+from config import FMeasureConfig, DistanceConfig, TfIdfConfig
 
-def index(config, directory):
-    index = RedisIndex(db=config.DATABASE, ranker=config.RANKER)
+def index(configs, directory):
     trees, (num_files, num_expressions, missing_tags) = SymbolTree.parse_directory(directory)
-    index.add_all(trees)
-    index.second_pass()
+    for config in configs:
+        index = RedisIndex(db=config.DATABASE, ranker=config.RANKER)
+        index.add_all(trees)
+        index.second_pass()
 
     print('')
     print('Added %d expressions from %d documents' % (num_expressions, num_files))
     print('Missing tags:')
     for tag, count in missing_tags.most_common():
         print('    %s (%d)' % (tag, count))
-        
+
+def second_pass(configs):
+    for config in configs:
+        index = RedisIndex(db=config.DATABASE, ranker=config.RANKER)
+        index.second_pass()
+
+def flush(configs):
+    for config in configs:
+        index = RedisIndex(db=config.DATABASE, ranker=config.RANKER)
+        index.r.flushdb()
 
 def print_help_and_exit():
-    exit('Usage: python index.py config_object <directory> [<directory2> ..]')
+    exit('Usage: python index.py {index|second_pass|flush} config_object <directory> [<directory2> ..]')
 
 if __name__ == '__main__':
 
     if len(argv) > 2:
-        if argv[1] == 'help':
-            print_help_and_exit()
+        if argv[2] == 'all':
+            configs = [FMeasureConfig, DistanceConfig, TfIdfConfig]
         else:
-            config = import_string(argv[1])
+            configs = [import_string(argv[2])]
 
-            for directory in argv[2:]:
-                index(config, directory)
+        if argv[1] == 'index':
+            for directory in argv[3:]:
+                index(configs, directory)
+        elif argv[1] == 'second_pass':
+            second_pass(configs)
+        elif argv[1] == 'flush':
+            flush(configs)
+        else:
+            print('test1')
+            print_help_and_exit()
     else:
+        print(argv)
         print_help_and_exit()
