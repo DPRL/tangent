@@ -2,6 +2,7 @@ from __future__ import division
 from collections import Counter, defaultdict
 from operator import itemgetter
 from itertools import izip_longest
+from random import randint
 import re
 
 import redis
@@ -15,6 +16,11 @@ class RedisIndex(Index):
             self.ranker = ranker
         else:
             self.ranker = FMeasureRanker()
+
+    def random(self):
+        expr_count = int(self.r.get('next_expr_id'))
+        expr_id = randint(0, expr_count - 1)
+        return self.r.get('expr:%d:text' % expr_id)
         
     def add(self, tree):
         # Check if expression is in the index.

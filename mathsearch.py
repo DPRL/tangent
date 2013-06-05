@@ -1,6 +1,7 @@
 import time
 from sys import argv, exit
 import os
+import StringIO
 from operator import itemgetter
 
 from flask import Flask, render_template, request, make_response
@@ -27,7 +28,8 @@ def time_it(fn, *args):
 @app.route('/')
 def root():
     if 'query' in request.args:
-        return query()
+        query_expr = request.args['query']
+        return query(query_expr)
     else:
         return home()
 
@@ -43,14 +45,27 @@ def list_all():
 def home():
     return render_template('query.html')
 
-def query():
-    query = request.args['query']
-    parse_time, tree = time_it(SymbolTree.parse_from_tex, query)
+def query(query_expr):
+    parse_time, tree = time_it(SymbolTree.parse_from_tex, query_expr)
     search_time, (results, num_results, pair_counts) = time_it(lambda: list(index.search(tree)))
     pair_count_str = u''
     for p, c in sorted(pair_counts.items(), reverse=True, key=itemgetter(1)):
         pair_count_str += u'%s: %d, ' % (p, c)
-    return render_template('results.html', query=query, results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time)
+    return render_template('results.html', query=query_expr, results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time)
+
+def query_mathml(query_expr):
+    parse_time, tree = time_it(lambda f: SymbolTree.parse_all_from_xml(f)[0], query_expr)
+    search_time, (results, num_results, pair_counts) = time_it(lambda: list(index.search(tree)))
+    pair_count_str = u''
+    for p, c in sorted(pair_counts.items(), reverse=True, key=itemgetter(1)):
+        pair_count_str += u'%s: %d, ' % (p, c)
+    return render_template('results.html', query=query_expr, results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time)
+
+@app.route('/random')
+def random():
+    mathml = index.random()
+    f = StringIO.StringIO(mathml)
+    return query_mathml(f)
 
 @app.route("/listsize.png")
 def listsize():
