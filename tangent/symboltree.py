@@ -23,6 +23,7 @@ class MathML:
     mfenced = '{http://www.w3.org/1998/Math/MathML}mfenced'
     mover = '{http://www.w3.org/1998/Math/MathML}mover'
     munder = '{http://www.w3.org/1998/Math/MathML}munder'
+    semantics = '{http://www.w3.org/1998/Math/MathML}semantics'
 
 class UnknownTagException(Exception):
     def __init__(self, tag):
@@ -84,6 +85,12 @@ class Symbol:
                 return None
             else:
                 raise Exception('math element with more than 1 child')
+        if elem.tag == MathML.semantics:
+            children = list(elem)
+            if len(children) >= 1:
+                return cls.parse_from_mathml(children[0])
+            elif len(children) == 0:
+                return None
         elif elem.tag == MathML.mrow:
             children = filter(lambda x: x.tag != u'\u2062', map(cls.parse_from_mathml, elem))
             for i in range(1, len(children)):
