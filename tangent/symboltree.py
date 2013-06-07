@@ -145,9 +145,13 @@ class Symbol:
                 row.append(cls(separators[min(i, len(separators) - 1)]))
                 row.append(child)
             row.append(closing)
-            for i, symbol in list(enumerate(row))[1:]:
-                row[i - 1].next = symbol
-            return opening
+
+            for i in range(1, len(row)):
+                elem = row[i - 1]
+                while elem.next:
+                    elem = elem.next
+                elem.next = row[i]
+            return row[0]
         else:
             raise UnknownTagException(elem.tag)
 
