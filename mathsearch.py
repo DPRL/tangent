@@ -59,7 +59,7 @@ def query_mathml(query_expr):
     pair_count_str = u''
     for p, c in sorted(pair_counts.items(), reverse=True, key=itemgetter(1)):
         pair_count_str += u'%s: %d, ' % (p, c)
-    return render_template('results.html', query=query_expr, results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time)
+    return render_template('results.html', query='', results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time)
 
 @app.route('/random')
 def random():
