@@ -20,4 +20,4 @@ class Index:
     def second_pass():
         pass
 
-Result = namedtuple('Result', ['mathml', 'score', 'debug_info', 'links', 'expr_id'])
+Result = namedtuple('Result', ['latex', 'score', 'debug_info', 'links', 'expr_id'])

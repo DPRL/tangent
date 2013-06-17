@@ -204,9 +204,6 @@ class SymbolTree:
     def get_symbols(self):
         return self.root.get_symbols()
 
-    def get_html(self):
-        return self.mathml
-
     @classmethod
     def parse(cls, filename, missing_tags=None):
         ext = os.path.splitext(filename)[1]
@@ -241,6 +238,10 @@ class SymbolTree:
             if event == 'end' and elem.tag == MathML.math:
                 try:
                     tree = cls.parse_from_mathml(elem)
+                    if 'alttext' in elem.attrib:
+                        tree.latex = elem.attrib['alttext']
+                    else:
+                        tree.latex = ''
                     elem.tail = None
                     elem.attrib = {}
                     tree.mathml = ET.tostring(elem)

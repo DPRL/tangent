@@ -23,7 +23,7 @@
             <ul id="results">
             {% for r in results %}
                 <li class="result">
-                    <div class="expression">{% autoescape false %}{{ r.mathml }}{% endautoescape %}</div>
+                    <div class="expression">{% autoescape false %}${{ r.latex }}${% endautoescape %}</div>
                     <div class="moreInfo">
                         <div class="info">Score: {{ '{:.3f}'.format(r.score) }}</div>
                         <div class="info">Document: <a href="{{ r.links[0] }}">{{ r.links[0] }}</a></div>

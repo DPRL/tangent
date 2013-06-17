@@ -20,7 +20,7 @@ class RedisIndex(Index):
     def random(self):
         expr_count = int(self.r.get('next_expr_id'))
         expr_id = randint(0, expr_count - 1)
-        return self.r.get('expr:%d:text' % expr_id)
+        return self.r.get('expr:%d:mathml' % expr_id)
         
     def add(self, tree):
         # Check if expression is in the index.
@@ -36,7 +36,8 @@ class RedisIndex(Index):
             pipe = self.r.pipeline()
 
             # Insert the source text and number of pairs of the expression.
-            pipe.set('expr:%d:text' % expr_id, tree.get_html())
+            pipe.set('expr:%d:mathml' % expr_id, tree.mathml)
+            pipe.set('expr:%d:latex' % expr_id, tree.latex)
             pipe.set('expr:%d:num_pairs' % expr_id, num_atoms)
             pipe.sadd('expr:%d:doc' % expr_id, tree.document)
 
@@ -94,7 +95,7 @@ class RedisIndex(Index):
         # Get MathML source for expressions to return.
         results = []
         for expr_id, count, match_pairs in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
-            results.append(Result(mathml=self.r.get('expr:%s:text' % expr_id),
+            results.append(Result(latex=self.r.get('expr:%s:latex' % expr_id),
                                   score=count,
                                   debug_info=['Pairs: %s' % match_pairs],
                                   links=self.get_document_links(expr_id),
