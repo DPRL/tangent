@@ -27,6 +27,7 @@ class MathML:
     mpadded = '{http://www.w3.org/1998/Math/MathML}mpadded'
     none = '{http://www.w3.org/1998/Math/MathML}none'
     mstyle = '{http://www.w3.org/1998/Math/MathML}mstyle'
+    mspace = '{http://www.w3.org/1998/Math/MathML}mspace'
     semantics = '{http://www.w3.org/1998/Math/MathML}semantics'
 
 class UnknownTagException(Exception):
@@ -117,6 +118,8 @@ class Symbol:
             return cls(elem.text)
         elif elem.tag == MathML.mtext:
             return cls(elem.text)
+        elif elem.tag == MathML.mspace:
+            return cls(' ')
         elif elem.tag == MathML.msub:
             children = map(cls.parse_from_mathml, elem)
             children[0].below = children[1]
