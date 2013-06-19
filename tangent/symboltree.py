@@ -25,6 +25,7 @@ class MathML:
     mover = '{http://www.w3.org/1998/Math/MathML}mover'
     munder = '{http://www.w3.org/1998/Math/MathML}munder'
     mpadded = '{http://www.w3.org/1998/Math/MathML}mpadded'
+    none = '{http://www.w3.org/1998/Math/MathML}none'
     semantics = '{http://www.w3.org/1998/Math/MathML}semantics'
 
 class UnknownTagException(Exception):
@@ -94,7 +95,7 @@ class Symbol:
             elif len(children) == 0:
                 return None
         elif elem.tag == MathML.mrow:
-            children = filter(lambda x: x.tag != u'\u2062', map(cls.parse_from_mathml, elem))
+            children = filter(lambda x: x is not None and x.tag != u'\u2062', map(cls.parse_from_mathml, elem))
             for i in range(1, len(children)):
                 elem = children[i - 1]
                 while elem.next:
@@ -164,13 +165,15 @@ class Symbol:
                 elem.next = row[i]
             return row[0]
         elif elem.tag == MathML.mpadded:
-            children = filter(lambda x: x.tag != u'\u2062', map(cls.parse_from_mathml, elem))
+            children = filter(lambda x: x is not None and x.tag != u'\u2062', map(cls.parse_from_mathml, elem))
             for i in range(1, len(children)):
                 elem = children[i - 1]
                 while elem.next:
                     elem = elem.next
                 elem.next = children[i]
             return children[0]
+        elif elem.tag == MathML.none:
+            return None
         else:
             raise UnknownTagException(elem.tag)
 
