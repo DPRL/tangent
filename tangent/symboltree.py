@@ -251,8 +251,8 @@ class SymbolTree:
                     if missing_tags is not None:
                         missing_tags.update([e.tag])
                 except Exception as e:
-                    pass
-                    #print(e.message)
+                    if missing_tags is not None:
+                        missing_tags.update(['Unknown error: ' + e.message])
         return trees
 
     @classmethod
