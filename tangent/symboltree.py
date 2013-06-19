@@ -18,6 +18,7 @@ class MathML:
     msub = '{http://www.w3.org/1998/Math/MathML}msub'
     msup = '{http://www.w3.org/1998/Math/MathML}msup'
     msubsup = '{http://www.w3.org/1998/Math/MathML}msubsup'
+    munderover = '{http://www.w3.org/1998/Math/MathML}munderover'
     msqrt = '{http://www.w3.org/1998/Math/MathML}msqrt'
     mroot = '{http://www.w3.org/1998/Math/MathML}mroot'
     mfrac = '{http://www.w3.org/1998/Math/MathML}mfrac'
@@ -129,6 +130,11 @@ class Symbol:
             children[0].above = children[1]
             return children[0]
         elif elem.tag == MathML.msubsup:
+            children = map(cls.parse_from_mathml, elem)
+            children[0].above = children[1]
+            children[0].below = children[2]
+            return children[0]
+        elif elem.tag == MathML.munderover:
             children = map(cls.parse_from_mathml, elem)
             children[0].above = children[1]
             children[0].below = children[2]
