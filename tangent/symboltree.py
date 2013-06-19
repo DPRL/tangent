@@ -26,6 +26,7 @@ class MathML:
     munder = '{http://www.w3.org/1998/Math/MathML}munder'
     mpadded = '{http://www.w3.org/1998/Math/MathML}mpadded'
     none = '{http://www.w3.org/1998/Math/MathML}none'
+    mstyle = '{http://www.w3.org/1998/Math/MathML}mstyle'
     semantics = '{http://www.w3.org/1998/Math/MathML}semantics'
 
 class UnknownTagException(Exception):
@@ -89,6 +90,12 @@ class Symbol:
             else:
                 raise Exception('math element with more than 1 child')
         if elem.tag == MathML.semantics:
+            children = list(elem)
+            if len(children) >= 1:
+                return cls.parse_from_mathml(children[0])
+            elif len(children) == 0:
+                return None
+        if elem.tag == MathML.mstyle:
             children = list(elem)
             if len(children) >= 1:
                 return cls.parse_from_mathml(children[0])
