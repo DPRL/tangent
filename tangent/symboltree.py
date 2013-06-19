@@ -259,11 +259,14 @@ class SymbolTree:
     def count_tags(cls, directory):
         tags = Counter()
         fullnames = []
-        for dirname, dirnames, filenames in os.walk(directory):
-            fullnames.extend([os.path.join(dirname, filename)
-                for filename
-                in filenames
-                if os.path.splitext(filename)[1] in ['.xhtml', '.xml', '.mathml']])
+        if os.path.isfile(directory):
+            fullnames.append(directory)
+        else:
+            for dirname, dirnames, filenames in os.walk(directory):
+                fullnames.extend([os.path.join(dirname, filename)
+                    for filename
+                    in filenames
+                    if os.path.splitext(filename)[1] in ['.xhtml', '.xml', '.mathml']])
 
         for i, fullname in enumerate(fullnames):
             print('parsing %s (%d of %d)' % (fullname, i + 1, len(fullnames)))
@@ -278,8 +281,11 @@ class SymbolTree:
         trees = []
         missing_tags = Counter()
         fullnames = []
-        for dirname, dirnames, filenames in os.walk(directory):
-            fullnames.extend([os.path.join(dirname, filename) for filename in filenames])
+        if os.path.isfile(directory):
+            fullnames.append(directory)
+        else:
+            for dirname, dirnames, filenames in os.walk(directory):
+                fullnames.extend([os.path.join(dirname, filename) for filename in filenames])
 
         for i, fullname in enumerate(fullnames):
             print('parsing %s (%d of %d)' % (fullname, i + 1, len(fullnames)))
