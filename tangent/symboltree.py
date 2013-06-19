@@ -13,6 +13,7 @@ class MathML:
     mn = '{http://www.w3.org/1998/Math/MathML}mn'
     mo = '{http://www.w3.org/1998/Math/MathML}mo'
     mi = '{http://www.w3.org/1998/Math/MathML}mi'
+    mtext = '{http://www.w3.org/1998/Math/MathML}mtext'
     mrow = '{http://www.w3.org/1998/Math/MathML}mrow'
     msub = '{http://www.w3.org/1998/Math/MathML}msub'
     msup = '{http://www.w3.org/1998/Math/MathML}msup'
@@ -105,6 +106,8 @@ class Symbol:
         elif elem.tag == MathML.mo:
             return cls(elem.text)
         elif elem.tag == MathML.mi:
+            return cls(elem.text)
+        elif elem.tag == MathML.mtext:
             return cls(elem.text)
         elif elem.tag == MathML.msub:
             children = map(cls.parse_from_mathml, elem)
