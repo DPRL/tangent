@@ -28,7 +28,7 @@ class TfIdfRanker(object):
             pipe.scard('pair:%s:exprs' % p)
         all_counts = dict((pair, int(count)) for (pair, count) in izip(all_pairs, pipe.execute()))
 
-        num_exprs = int(db.get('next_expr_id'))
+        num_exprs = int(db.get('next_expr_id')) + 1
         for i in range(num_exprs):
             pairs = db.smembers('expr:%d:all_pairs' % i)
             counts = (all_counts[p] for p in pairs)

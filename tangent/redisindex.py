@@ -63,14 +63,15 @@ class RedisIndex(Index):
         match_lists = defaultdict(list)
         pipe = self.r.pipeline()
         pairs, extras, num_atoms= self.ranker.get_atoms(search_tree)
+        pairs_single = list(set(pairs))
         search_extras = dict(izip_longest(pairs, extras))
         pair_counts = dict()
         total_exprs = int(self.r.get('next_expr_id'))
 
         # Get expressions that contain each pair and count them.
-        for pair in pairs:
+        for pair in pairs_single:
             pipe.smembers('pair:%s:exprs' % pair)
-        for pair, expressions in zip(pairs, pipe.execute()):
+        for pair, expressions in zip(pairs_single, pipe.execute()):
             pair_counts[pair] = len(expressions)
             for e in expressions:
                 if ':' in e:
