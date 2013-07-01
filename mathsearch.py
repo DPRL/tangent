@@ -63,9 +63,8 @@ def query_mathml(query_expr):
 
 @app.route('/random')
 def random():
-    mathml = index.random()
-    f = StringIO.StringIO(mathml)
-    return query_mathml(f)
+    latex = index.random()
+    return query(latex)
 
 @app.route("/listsize.png")
 def listsize():

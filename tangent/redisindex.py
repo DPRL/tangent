@@ -20,7 +20,7 @@ class RedisIndex(Index):
     def random(self):
         expr_count = int(self.r.get('next_expr_id'))
         expr_id = randint(0, expr_count - 1)
-        return self.r.get('expr:%d:mathml' % expr_id)
+        return self.r.get('expr:%d:latex' % expr_id)
         
     def add(self, tree):
         # Check if expression is in the index.
