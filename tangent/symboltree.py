@@ -37,11 +37,12 @@ class UnknownTagException(Exception):
 
 
 class Symbol:
-    def __init__(self, tag, next=None, above=None, below=None):
+    def __init__(self, tag, next=None, above=None, below=None, within=None):
         self.tag = tag
         self.next = next
         self.above = above
         self.below = below
+        self.within = within
         self.id = None
 
     def build_repr(self, builder):
@@ -56,6 +57,9 @@ class Symbol:
         if self.below:
             builder.append(',below=')
             self.below.build_repr(builder)
+        if self.within:
+            builder.append(',within=')
+            self.within.build_repr(builder)
         builder.append(')')
 
     def get_symbols(self):
@@ -63,7 +67,7 @@ class Symbol:
 
     def generate_ids(self, prefix=(0,)):
         self.id = prefix
-        for child, v_dist in [(self.above, 1), (self.next, 0), (self.below, -1)]:
+        for child, v_dist in [(self.above, 1), (self.next, 0), (self.below, -1), (self.within, 2)]:
             if child:
                 child.generate_ids(prefix + (v_dist,))
 
@@ -75,7 +79,7 @@ class Symbol:
             return helper
 
         ret = []
-        for child, v_dist in [(self.above, 1), (self.next, 0), (self.below, -1)]:
+        for child, v_dist in [(self.above, 1), (self.next, 0), (self.below, -1), (self.within, 0)]:
             if child:
                 ret.extend(map(mk_helper(v_dist), child.get_symbols()))
                 ret.extend(child.get_pairs())
@@ -148,9 +152,21 @@ class Symbol:
             children[0].below = children[1]
             return children[0]
         elif elem.tag == MathML.msqrt:
-            raise Exception('msqrt unimplemented')
+            children = map(cls.parse_from_mathml, elem)
+            if len(children) == 1:
+                root = cls('root2')
+                root.within = children[0]
+                return root
+            else:
+                raise Exception('msqrt element with != 1 children')
         elif elem.tag == MathML.mroot:
-            raise Exception('mroot unimplemented')
+            children = map(cls.parse_from_mathml, elem)
+            if len(children) == 2:
+                root = cls('root' + children[1].tag)
+                root.within = children[0]
+                return root
+            else:
+                raise Exception('mroot element with != 2 children')
         elif elem.tag == MathML.mfrac:
             children = map(cls.parse_from_mathml, elem)
             if len(children) == 2:
@@ -210,6 +226,8 @@ class SymbolIterator(object):
             self.stack.append((elem.next, h_dist + 1, v_dist))
         if elem.above:
             self.stack.append((elem.above, h_dist + 1, v_dist + 1))
+        if elem.within:
+            self.stack.append((elem.within, h_dist + 1, v_dist))
         return (elem, h_dist, v_dist)
 
 class SymbolTree:
