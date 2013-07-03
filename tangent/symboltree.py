@@ -116,13 +116,13 @@ class Symbol:
                 elem.next = children[i]
             return children[0]
         elif elem.tag == MathML.mn:
-            return cls(elem.text)
+            return cls(elem.text if elem.text else '')
         elif elem.tag == MathML.mo:
-            return cls(elem.text)
+            return cls(elem.text if elem.text else '')
         elif elem.tag == MathML.mi:
-            return cls(elem.text)
+            return cls(elem.text if elem.text else '')
         elif elem.tag == MathML.mtext:
-            return cls(elem.text)
+            return cls(elem.text if elem.text else '')
         elif elem.tag == MathML.mspace:
             return cls(' ')
         elif elem.tag == MathML.msub:
@@ -236,10 +236,12 @@ class SymbolTree:
 
     def __init__(self, root):
         self.root = root
-        self.num_pairs = len(list(self.get_pairs()))
+        self.num_pairs = len(self.get_pairs())
 
     def get_pairs(self):
-        return self.root.get_pairs()
+        return ['|'.join(map(unicode, [s1.replace('|', '!@!'), s2.replace('|', '!@!'), dh, dv]))
+                for s1, s2, dh, dv, _
+                in self.root.get_pairs()]
 
     def get_symbols(self):
         return self.root.get_symbols()

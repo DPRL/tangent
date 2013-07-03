@@ -8,7 +8,7 @@ import re
 
 import redis
 
-from tangent import Index, Result, FMeasureRanker
+from tangent import Index, Result, FMeasureRanker, DistanceRanker, RecallRanker, TfIdfRanker
 
 class RedisIndex(Index):
     def __init__(self, ranker=None, db=0):
@@ -17,6 +17,7 @@ class RedisIndex(Index):
             self.ranker = ranker
         else:
             self.ranker = FMeasureRanker()
+        self.all_rankers = [FMeasureRanker(), DistanceRanker(), RecallRanker(), TfIdfRanker()]
 
     def random(self):
         expr_count = int(self.r.get('next_expr_id'))
@@ -33,70 +34,81 @@ class RedisIndex(Index):
             # Get a unique id for the expression.
             expr_id = self.r.incr('next_expr_id')
 
-            pairs, extras, num_atoms = self.ranker.get_atoms(tree)
+            pairs = tree.get_pairs()
             pipe = self.r.pipeline()
 
             # Insert the source text and number of pairs of the expression.
             pipe.set('expr:%d:mathml' % expr_id, tree.mathml)
             pipe.set('expr:%d:latex' % expr_id, tree.latex)
-            pipe.set('expr:%d:num_pairs' % expr_id, num_atoms)
             pipe.sadd('expr:%d:doc' % expr_id, tree.document)
+
+            # Add the max result score for each ranker.
+            for ranker in self.all_rankers:
+                score = ranker.search_score(pairs)
+                pipe.set('expr:%d:%s' % (expr_id, ranker.result_score_key),
+                         score)
 
             # Create an index from tree to its id, so we can do exact search.
             pipe.set(u'tree:%s' % tree.build_repr(), expr_id)
             
             # Insert each pair in the inverted lists.
-            for pair, extra in izip_longest(pairs, extras):
-                if extra:
-                    value = '%d:%s' % (expr_id, extra)
-                else:
-                    value = expr_id
-                pipe.sadd('pair:%s:exprs' % pair, value)
+            for pair in pairs:
+                pipe.lpush('pair:%s:exprs' % pair, expr_id)
 
             # Create set of all pairs.
             for p in pairs:
-                self.r.sadd('expr:%d:all_pairs' % expr_id, p)
+                self.r.rpush('expr:%d:all_pairs' % expr_id, p)
                 self.r.sadd('all_pairs', p)
 
             pipe.execute()
 
     def search(self, search_tree):
-        match_lists = defaultdict(list)
-        pipe = self.r.pipeline()
-        pairs, extras, num_atoms= self.ranker.get_atoms(search_tree)
-        pairs_single = list(set(pairs))
-        search_extras = dict(izip_longest(pairs, extras))
+        matches = defaultdict(list)
         pair_counts = dict()
-        total_exprs = int(self.r.get('next_expr_id'))
+        total_exprs = int(self.r.get('next_expr_id')) + 1
+        pipe = self.r.pipeline()
 
+        search_pairs = search_tree.get_pairs()
+        search_pair_counts = Counter(search_pairs).items()
+        
         # Get expressions that contain each pair and count them.
-        for pair in pairs_single:
-            pipe.smembers('pair:%s:exprs' % pair)
-        for pair, expressions in zip(pairs_single, pipe.execute()):
+        for pair, count in search_pair_counts:
+            pipe.lrange('pair:%s:exprs' % pair, 0, -1)
+        for (pair, count), expressions in zip(search_pair_counts,
+                                              pipe.execute()):
             pair_counts[pair] = len(expressions)
+            prev = None
             for e in expressions:
-                if ':' in e:
-                    exp, extra = e.split(':')
-                    match_lists[int(exp)].append((pair, extra))
+                if e == prev:
+                    match_count += 1
                 else:
-                    match_lists[int(e)].append((pair, None))
+                    match_count = 1
+                if match_count <= count:
+                    matches[int(e)].append(pair)
+                prev = e
 
         # Get number of pairs in each matched expression.
-        matches = match_lists.items()
-        for expr_id, _ in matches:
-            pipe.get('expr:%d:num_pairs' % expr_id)
-        counts = [float(x) for x in pipe.execute()]
+        for expr_id in matches.keys():
+            pipe.get('expr:%d:%s' % (expr_id, self.ranker.result_score_key))
+        result_scores = [float(x) for x in pipe.execute()]
+
+        # Get max score for the search term
+        search_score = self.ranker.search_score(search_pairs, pair_counts,
+                                                total_exprs)
 
         # Calculate a score for each matched expression.
-        final_matches = ((expr_id, 
-                          self.ranker.rank(match_pairs, search_extras, num_atoms, result_size, pair_counts, total_exprs),
-                          match_pairs)
-                         for (expr_id, match_pairs), result_size
-                         in zip(matches, counts))
-
-        # Get MathML source for expressions to return.
+        ranked_matches = ((expr_id, 
+                           self.ranker.rank(match_pairs, search_score,
+                                            result_score, pair_counts,
+                                            total_exprs),
+                           match_pairs)
+                          for (expr_id, match_pairs), result_score
+                          in zip(matches.items(), result_scores))
+        
+        # Sort the results, and get additional information for the top results.
         results = []
-        for expr_id, count, match_pairs in sorted(final_matches, reverse=True, key=itemgetter(1))[:10]:
+        for expr_id, count, match_pairs in sorted(ranked_matches, reverse=True,
+                                                  key=itemgetter(1))[:10]:
             results.append(Result(latex=self.r.get('expr:%s:latex' % expr_id),
                                   score=count,
                                   debug_info=['Pairs: %s' % match_pairs],
@@ -105,11 +117,12 @@ class RedisIndex(Index):
         return results, len(matches), pair_counts
 
     def second_pass(self):
-        try:
-            self.ranker.second_pass(self.r)
-        except AttributeError:
-            # Ranker does not have a second pass method, so do nothing.
-            pass
+        for ranker in self.all_rankers:
+            try:
+                ranker.second_pass(self.r)
+            except AttributeError:
+                # Ranker does not have a second pass method, so do nothing.
+                pass
 
     def exact_search(self, search_tree):
         return self.r.get(u'tree:%s' % search_tree.build_repr())

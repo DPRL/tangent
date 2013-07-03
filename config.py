@@ -12,12 +12,12 @@ class FMeasureConfig(Config):
 
 class DistanceConfig(Config):
     RANKER = DistanceRanker()
-    DATABASE = 1
+    DATABASE = 0
     PORT = 9003
 
 class RecallConfig(Config):
     RANKER = RecallRanker()
-    DATABASE = 1
+    DATABASE = 0
     PORT = 9004
 
 class PrefixConfig(Config):
@@ -27,5 +27,5 @@ class PrefixConfig(Config):
 
 class TfIdfConfig(Config):
     RANKER = TfIdfRanker()
-    DATABASE = 2
+    DATABASE = 0
     PORT = 9006
