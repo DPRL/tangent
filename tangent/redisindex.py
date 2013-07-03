@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 from operator import itemgetter
 from itertools import izip_longest
 from random import randint
+import urllib
 import re
 
 import redis
@@ -118,8 +119,8 @@ class RedisIndex(Index):
         return [self.create_document_link(d) for d in docs]
 
     def create_document_link(self, path):
-        match = re.search(r'(/\d\d\d\d/.*)', path)
+        match = re.search(r'([^/]*)\.mml', path)
         if match:
-            return 'http://saskatoon.cs.rit.edu/mrec' +  match.group()
+            return 'http://en.wikipedia.org/w/index.php?search=%s&go=Go' % urllib.quote(match.group(1)), 'Wikipedia - ' + match.group(1)
         else:
-            return path
+            return path, path

@@ -26,9 +26,9 @@
                     <div class="expression">{% autoescape false %}${{ r.latex }}${% endautoescape %}</div>
                     <div class="moreInfo">
                         <div class="info">Score: {{ '{:.3f}'.format(r.score) }}</div>
-                        <div class="info">Document: <a href="{{ r.links[0] }}">{{ r.links[0] }}</a></div>
+                        <div class="info">Document: <a href="{{ r.links[0][0] }}">{{ r.links[0][1] }}</a></div>
                         {% for d in r.links[1:] %}
-                            <div class="info extra">Document: <a href="{{ d }}">{{ d }}</a></div>
+                            <div class="info extra">Document: <a href="{{ d[0] }}">{{ d[1] }}</a></div>
                         {% endfor %}
                         {% for e in r.debug_info %}
                             <div class="info extra">
