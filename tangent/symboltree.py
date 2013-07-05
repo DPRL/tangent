@@ -67,7 +67,7 @@ class Symbol:
 
     def generate_ids(self, prefix=(0,)):
         self.id = prefix
-        for child, v_dist in [(self.above, 1), (self.next, 0), (self.below, -1), (self.within, 2)]:
+        for child, v_dist in [(self.above, 1), (self.next, 0), (self.below, 2), (self.within, 3)]:
             if child:
                 child.generate_ids(prefix + (v_dist,))
 
@@ -232,16 +232,24 @@ class SymbolIterator(object):
 
 class SymbolTree:
 
-    __slots__ = ['root', 'num_pairs', 'mathml', 'document']
+    __slots__ = ['root', 'latex', 'mathml', 'document']
 
     def __init__(self, root):
         self.root = root
-        self.num_pairs = len(self.get_pairs())
+        self.root.generate_ids()
 
-    def get_pairs(self):
-        return ['|'.join(map(unicode, [s1.replace('|', '!@!'), s2.replace('|', '!@!'), dh, dv]))
-                for s1, s2, dh, dv, _
-                in self.root.get_pairs()]
+    def get_pairs(self, get_paths=False):
+        if get_paths:
+            pairs = []
+            paths = []
+            for s1, s2, dh, dv, path in self.root.get_pairs():
+                pairs.append(('|'.join(map(unicode, [s1.replace('|', '!@!'), s2.replace('|', '!@!'), dh, dv]))))
+                paths.append(''.join(map(unicode, path)))
+            return pairs, paths
+        else: 
+            return ['|'.join(map(unicode, [s1.replace('|', '!@!'), s2.replace('|', '!@!'), dh, dv]))
+                    for s1, s2, dh, dv, _
+                    in self.root.get_pairs()]
 
     def get_symbols(self):
         return self.root.get_symbols()
@@ -268,7 +276,6 @@ class SymbolTree:
     @classmethod
     def parse_from_mathml(cls, elem):
         root = Symbol.parse_from_mathml(elem)
-        root.generate_ids()
         tree = cls(root)
         tree.mathml = ET.tostring(elem)
         return tree

@@ -8,7 +8,7 @@ import re
 
 import redis
 
-from tangent import Index, Result, FMeasureRanker, DistanceRanker, RecallRanker, TfIdfRanker
+from tangent import Index, Result, FMeasureRanker, DistanceRanker, RecallRanker, PrefixRanker, TfIdfRanker
 
 class RedisIndex(Index):
     def __init__(self, ranker=None, db=0):
@@ -17,7 +17,7 @@ class RedisIndex(Index):
             self.ranker = ranker
         else:
             self.ranker = FMeasureRanker()
-        self.all_rankers = [FMeasureRanker(), DistanceRanker(), RecallRanker(), TfIdfRanker()]
+        self.all_rankers = [FMeasureRanker(), DistanceRanker(), RecallRanker(), PrefixRanker(), TfIdfRanker()]
 
     def random(self):
         expr_count = int(self.r.get('next_expr_id'))
@@ -34,7 +34,7 @@ class RedisIndex(Index):
             # Get a unique id for the expression.
             expr_id = self.r.incr('next_expr_id')
 
-            pairs = tree.get_pairs()
+            pairs = tree.get_pairs(get_paths=True)
             pipe = self.r.pipeline()
 
             # Insert the source text and number of pairs of the expression.
@@ -44,7 +44,7 @@ class RedisIndex(Index):
 
             # Add the max result score for each ranker.
             for ranker in self.all_rankers:
-                score = ranker.search_score(pairs)
+                score = ranker.search_score(pairs[0])
                 pipe.set('expr:%d:%s' % (expr_id, ranker.result_score_key),
                          score)
 
@@ -52,13 +52,15 @@ class RedisIndex(Index):
             pipe.set(u'tree:%s' % tree.build_repr(), expr_id)
             
             # Insert each pair in the inverted lists.
-            for pair in pairs:
+            for pair, path in zip(*pairs):
                 pipe.lpush('pair:%s:exprs' % pair, expr_id)
+                pipe.lpush('pair:%s:paths' % pair, path)
 
             # Create set of all pairs.
-            for p in pairs:
-                self.r.rpush('expr:%d:all_pairs' % expr_id, p)
-                self.r.sadd('all_pairs', p)
+            for pair, path in zip(*pairs):
+                pipe.rpush('expr:%d:all_pairs' % expr_id, pair)
+                pipe.rpush('expr:%d:all_paths' % expr_id, path)
+                pipe.sadd('all_pairs', pair)
 
             pipe.execute()
 
@@ -68,24 +70,37 @@ class RedisIndex(Index):
         total_exprs = int(self.r.get('next_expr_id')) + 1
         pipe = self.r.pipeline()
 
-        search_pairs = search_tree.get_pairs()
+        search_pairs, paths = search_tree.get_pairs(get_paths=True)
+        search_paths = defaultdict(list)
+        for pair, path in zip(search_pairs, paths):
+            search_paths[pair].append(path)
         search_pair_counts = Counter(search_pairs).items()
         
         # Get expressions that contain each pair and count them.
-        for pair, count in search_pair_counts:
-            pipe.lrange('pair:%s:exprs' % pair, 0, -1)
-        for (pair, count), expressions in zip(search_pair_counts,
-                                              pipe.execute()):
-            pair_counts[pair] = len(expressions)
-            prev = None
-            for e in expressions:
-                if e == prev:
-                    match_count += 1
-                else:
-                    match_count = 1
-                if match_count <= count:
-                    matches[int(e)].append(pair)
-                prev = e
+        if self.ranker.fetch_paths:
+            pipe2 = self.r.pipeline()
+            for pair, count in search_pair_counts:
+                pipe.lrange('pair:%s:exprs' % pair, 0, -1)
+                pipe2.lrange('pair:%s:paths' % pair, 0, -1)
+            for (pair, count), expressions, paths in zip(search_pair_counts,
+                                                         pipe.execute(),
+                                                         pipe2.execute()):
+                pair_counts[pair] = len(expressions)
+                for e, path in zip(expressions, paths):
+                    matches[int(e)].append((pair, path))
+        else:
+            for pair, count in search_pair_counts:
+                pipe.lrange('pair:%s:exprs' % pair, 0, -1)
+            for (pair, count), expressions in zip(search_pair_counts,
+                                                  pipe.execute()):
+                pair_counts[pair] = len(expressions)
+                prev = None
+                for e in expressions:
+                    match_count = match_count + 1 if e == prev else 1
+                    if match_count <= count:
+                        matches[int(e)].append(pair)
+                    prev = e
+
 
         # Get number of pairs in each matched expression.
         for expr_id in matches.keys():
@@ -100,7 +115,7 @@ class RedisIndex(Index):
         ranked_matches = ((expr_id, 
                            self.ranker.rank(match_pairs, search_score,
                                             result_score, pair_counts,
-                                            total_exprs),
+                                            total_exprs, search_paths),
                            match_pairs)
                           for (expr_id, match_pairs), result_score
                           in zip(matches.items(), result_scores))

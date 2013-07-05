@@ -6,8 +6,9 @@ class RecallRanker(object):
         return len(search_pairs)
 
     result_score_key = 'recall_score'
+    fetch_paths = False
 
     @staticmethod
-    def rank(match_pairs, search_score, result_score, pair_counts, total_exprs):
+    def rank(match_pairs, search_score, result_score, pair_counts, total_exprs, search_paths):
         num_matches = len(match_pairs)
         return 3.25 * num_matches / (2.25 * search_score + result_score)
