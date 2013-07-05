@@ -327,7 +327,6 @@ class SymbolTree:
 
     @classmethod
     def parse_directory(cls, directory):
-        trees = []
         missing_tags = Counter()
         fullnames = []
         if os.path.isfile(directory):
@@ -336,11 +335,18 @@ class SymbolTree:
             for dirname, dirnames, filenames in os.walk(directory):
                 fullnames.extend([os.path.join(dirname, filename) for filename in filenames])
 
-        for i, fullname in enumerate(fullnames):
-            print('parsing %s (%d of %d)' % (fullname, i + 1, len(fullnames)))
-            trees.extend(cls.parse(fullname, missing_tags=missing_tags))
-        stats = (len(fullnames), len(trees), missing_tags)
-        return trees, stats
+        stats = {
+            'num_documents': len(fullnames),
+            'num_expressions': 0,
+            'missing_tags': missing_tags
+        }
+        def get():
+            for i, fullname in enumerate(fullnames):
+                print('parsing %s (%d of %d)' % (fullname, i + 1, len(fullnames)))
+                for t in cls.parse(fullname, missing_tags=missing_tags):
+                    stats['num_expressions'] += 1
+                    yield t
+        return get(), stats
 
 
     def build_repr(self):
