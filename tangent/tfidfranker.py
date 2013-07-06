@@ -20,8 +20,6 @@ class TfIdfRanker(object):
     @staticmethod
     def rank(match_pairs, search_score, result_score, pair_counts, total_exprs, search_paths):
         match_score = idf((pair_counts[p] for p in match_pairs), total_exprs)
-        if 2 * match_score / (search_score + result_score) > 1:
-            import ipdb; ipdb.set_trace()
         return 2 * match_score / (search_score + result_score)
 
     @staticmethod
