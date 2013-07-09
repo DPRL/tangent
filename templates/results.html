@@ -17,24 +17,34 @@
                 {{ '{:.0f}'.format(search_time + parse_time) }} ms
                 ({{ '{:.0f}'.format(parse_time) }} ms parsing,
                 {{ '{:.0f}'.format(search_time) }} ms searching).
-                <br>
-                Pair counts: {{ pair_counts }}
+                {% if debug %}
+                    <br>
+                    Pair counts: {{ pair_counts }}
+                {% endif %}
             </div>
             <ul id="results">
             {% for r in results %}
                 <li class="result">
                     <div class="expression">{% autoescape false %}${{ r.latex }}${% endautoescape %}</div>
                     <div class="moreInfo">
-                        <div class="info">Score: {{ '{:.3f}'.format(r.score) }}</div>
-                        <div class="info">Document: <a href="{{ r.links[0][0] }}" target="_blank">{{ r.links[0][1] }}</a></div>
+                        <div class="info">
+                            Document: <a href="{{ r.links[0][0] }}" target="_blank">{{ r.links[0][1] }}</a>
+                        </div>
                         {% for d in r.links[1:] %}
                             <div class="info extra">Document: <a href="{{ d[0] }}" target="_blank">{{ d[1] }}</a></div>
                         {% endfor %}
-                        {% for e in r.debug_info %}
-                            <div class="info extra">
-                                {{ e }}
-                            </div>
-                        {% endfor %}
+                        {% if debug %}
+                            {% for e in r.debug_info %}
+                                <div class="info extra">
+                                    {{ e }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="info">
+                            Score: {{ '{:.3f}'.format(r.score) }} - 
+                            <a class="requery" href="http://saskatoon.cs.rit.edu/min?requery={{r.latex | urlencode}}" target="_blank">Edit query</a> - 
+                            <a class="requery" href="/?query={{r.latex | urlencode}}" target="_blank">Search for this</a>
+                        </div>
                     </div>
                 </li>
             {% endfor %}

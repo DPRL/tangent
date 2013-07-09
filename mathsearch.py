@@ -3,6 +3,8 @@ from sys import argv, exit
 import os
 import StringIO
 from operator import itemgetter
+import urlparse
+import urllib
 
 from flask import Flask, render_template, request, make_response
 
@@ -46,12 +48,13 @@ def home():
     return render_template('query.html')
 
 def query(query_expr):
+    debug = 'debug' in request.args and request.args['debug'] == 'true'
     parse_time, tree = time_it(SymbolTree.parse_from_tex, query_expr)
     search_time, (results, num_results, pair_counts) = time_it(lambda: list(index.search(tree)))
     pair_count_str = u''
     for p, c in sorted(pair_counts.items(), reverse=True, key=itemgetter(1)):
         pair_count_str += u'%s: %d, ' % (p, c)
-    return render_template('results.html', query=query_expr, results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time)
+    return render_template('results.html', query=query_expr, results=results, num_results=num_results, pair_counts=pair_count_str, parse_time=parse_time, search_time=search_time, debug=debug)
 
 def query_mathml(query_expr):
     parse_time, tree = time_it(lambda f: SymbolTree.parse_all_from_xml(f)[0], query_expr)
@@ -106,6 +109,11 @@ def listsize():
     response=make_response(png_output.getvalue())
     response.headers['Content-Type'] = 'image/png'
     return response
+
+@app.template_filter('urlencode')
+def urlencode(uri, **query):
+    return urllib.quote(uri)
+app.jinja_env.globals['urlencode'] = urlencode
 
 def initialize(directory):
     trees, stats = SymbolTree.parse_directory(directory)
