@@ -25,11 +25,11 @@ if __name__ == '__main__':
             print_help_and_exit()
         if len(argv) == 2:
             config = import_string(argv[1])
-            results = [search(config, query) for query in stdin.readlines()]
+            results = [search(config, query.strip()) for query in stdin.readlines()]
             print(json.dumps(results))
         else:
             config = import_string(argv[1])
-            results = [search(config, query) for query in argv[2:]]
+            results = [search(config, query.strip()) for query in argv[2:]]
             print(json.dumps(results))
     else:
         print_help_and_exit()
