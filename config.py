@@ -1,4 +1,4 @@
-from tangent import FMeasureRanker, DistanceRanker, RecallRanker, PrefixRanker, TfIdfRanker, EverythingRanker
+from tangent import FMeasureRanker, DistanceRanker, RecallRanker, PrefixRanker, TfIdfRanker, EverythingRanker, TfIdfPrefixRanker
 
 class Config(object):
     DEBUG = True
@@ -34,3 +34,8 @@ class EverythingConfig(Config):
     RANKER = EverythingRanker()
     DATABASE = 0
     PORT = 9007
+
+class TfIdfPrefixConfig(Config):
+    RANKER = TfIdfPrefixRanker()
+    DATABASE = 0
+    PORT = 9008

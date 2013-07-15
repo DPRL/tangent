@@ -8,7 +8,7 @@ import re
 
 import redis
 
-from tangent import Index, Result, FMeasureRanker, DistanceRanker, RecallRanker, PrefixRanker, TfIdfRanker, EverythingRanker
+from tangent import Index, Result, FMeasureRanker, DistanceRanker, RecallRanker, PrefixRanker, TfIdfRanker, EverythingRanker, TfIdfPrefixRanker
 
 class RedisIndex(Index):
     def __init__(self, ranker=None, db=0):
@@ -17,7 +17,7 @@ class RedisIndex(Index):
             self.ranker = ranker
         else:
             self.ranker = FMeasureRanker()
-        self.all_rankers = [FMeasureRanker(), DistanceRanker(), RecallRanker(), PrefixRanker(), TfIdfRanker(), EverythingRanker()]
+        self.all_rankers = [FMeasureRanker(), DistanceRanker(), RecallRanker(), PrefixRanker(), TfIdfRanker(), EverythingRanker(), TfIdfPrefixRanker()]
 
     def random(self):
         expr_count = int(self.r.get('next_expr_id'))
