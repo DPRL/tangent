@@ -1,10 +1,10 @@
 <!doctype html>
 <html>
     <head>
-        <link rel="stylesheet" type="text/css" href="/static/main.css">
+        <link rel="stylesheet" type="text/css" href="./static/main.css">
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-        <script type="text/javascript" src="/static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/javascript" src="/static/main.js"></script>
+        <script type="text/javascript" src="./static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="./static/main.js"></script>
     </head>
     <body>
         <div id="header">
@@ -43,7 +43,7 @@
                         <div class="info">
                             Score: {{ '{:.3f}'.format(r.score) }} - 
                             <a class="requery" href="http://saskatoon.cs.rit.edu/min?requery={{r.latex | urlencode}}" target="_blank">Edit query</a> - 
-                            <a class="requery" href="/?query={{r.latex | urlencode}}" target="_blank">Search for this</a>
+                            <a class="requery" href="./?query={{r.latex | urlencode}}" target="_blank">Search for this</a>
                         </div>
                     </div>
                 </li>

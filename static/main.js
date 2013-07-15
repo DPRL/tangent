@@ -4,7 +4,7 @@ MathJax.Hub.Config({
 
 function submitQuery() {
     var query = document.getElementById('query').value;
-    window.location = '/?query=' + encodeURIComponent(query);
+    window.location = './?query=' + encodeURIComponent(query);
     console.log(query);
 }
 
