@@ -274,6 +274,11 @@ class SymbolTree:
         return cls.parse_all_from_xml(f)[0]
 
     @classmethod
+    def parse_from_mathml_string(cls, mathml):
+        f = StringIO.StringIO(mathml)
+        return cls.parse_all_from_xml(f)[0]
+
+    @classmethod
     def parse_from_mathml(cls, elem):
         root = Symbol.parse_from_mathml(elem)
         tree = cls(root)

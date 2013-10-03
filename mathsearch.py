@@ -49,7 +49,11 @@ def home():
 
 def query(query_expr):
     debug = 'debug' in request.args and request.args['debug'] == 'true'
-    parse_time, tree = time_it(SymbolTree.parse_from_tex, query_expr)
+    is_mathml = '<math' in query_expr
+    if is_mathml:
+        parse_time, tree = time_it(lambda f: SymbolTree.parse_from_mathml_string(f), query_expr)
+    else:
+        parse_time, tree = time_it(SymbolTree.parse_from_tex, query_expr)
     search_time, (results, num_results, pair_counts) = time_it(lambda: list(index.search(tree)))
     pair_count_str = u''
     for p, c in sorted(pair_counts.items(), reverse=True, key=itemgetter(1)):
