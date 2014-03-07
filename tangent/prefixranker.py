@@ -32,6 +32,16 @@ class PrefixRanker(object):
 
     @staticmethod
     def search_score(search_pairs, pair_counts=None, total_exprs=None):
+        """
+        Score for search pairs is the the length of search pairs
+
+        :type search_pairs: list
+        :param search_pairs: list of symbol pairs
+
+        :rtype: double
+        :return: score for this expression
+
+        """
         return len(search_pairs)
 
     result_score_key = 'prefix_score'
@@ -39,6 +49,33 @@ class PrefixRanker(object):
 
     @staticmethod
     def rank(match_pairs, search_score, result_score, pair_counts, total_exprs, search_paths):
+        """
+        Returns prefix based score
+
+        :type match_pairs: list
+        :param match_pairs list of pairs that latched
+
+        :type search_score: double
+        :param search_score: score for pairs in query
+
+        :type result_score: double
+        :param result_score: score for pairs that matched
+
+
+        :type pair_counts: dict(str,int)
+        :param pair_counts: frequency for each symbol pair
+
+        :type total_exprs:
+        :param total_exprs:
+
+        :type search_paths:dict(str,list)
+        :param: search_paths:given two symbol pairs, the path between them
+
+        :rtype: double
+        :return: score
+
+        """
+
         matches = Counter()
         for pair, path in match_pairs:
             for search_path in search_paths[pair]:

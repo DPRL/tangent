@@ -46,9 +46,23 @@ def distance(pair):
     return int(pair.split('|')[2])
 
 class EverythingRanker(object):
+    """
+    The EverythingRanker is another scorer that considers distance and idf of pairs
 
+    """
     @staticmethod
     def search_score(search_pairs, pair_counts=None, total_exprs=None):
+        """
+        Score for search pairs is the sum of the idf or the length of search pairs
+
+        :type search_pairs: list
+        :param search_pairs: list of symbol pairs
+
+        :rtype: double
+        :return: score for this expression
+
+        """
+
         if pair_counts != None and total_exprs != None:
             return sum((1 / distance(p)) * idf(pair_counts[p], total_exprs) for p in search_pairs)
         else:
@@ -59,6 +73,33 @@ class EverythingRanker(object):
 
     @staticmethod
     def rank(match_pairs, search_score, result_score, pair_counts, total_exprs, search_paths):
+        """
+        Returns everythintf-idf-prefix based score
+
+        :type match_pairs: list
+        :param match_pairs list of pairs that latched
+
+        :type search_score: double
+        :param search_score: score for pairs in query
+
+        :type result_score: double
+        :param result_score: score for pairs that matched
+
+
+        :type pair_counts: dict(str,int)
+        :param pair_counts: frequency for each symbol pair
+
+        :type total_exprs:
+        :param total_exprs:
+
+        :type search_paths:dict(str,list)
+        :param: search_paths:given two symbol pairs, the path between them
+
+        :rtype: double
+        :return: score
+
+        """
+
         matches = defaultdict(float)
         for pair, path in match_pairs:
             pair_score = (1 / distance(pair)) * idf(pair_counts[pair], total_exprs)
@@ -71,6 +112,13 @@ class EverythingRanker(object):
 
     @staticmethod
     def second_pass(db):
+        """
+        Update the everything  score of the expressions
+
+        :type db: StrictRedis
+        :param db: Redis Database connection object
+
+        """
         pipe = db.pipeline()
         all_pairs = list(db.smembers('all_pairs'))
         for p in all_pairs:

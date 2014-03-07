@@ -27,9 +27,8 @@ Different Types of Config that specify different ranking algorithms
 
 """
 
-
-
-from tangent import FMeasureRanker, DistanceRanker, RecallRanker, PrefixRanker, TfIdfRanker, EverythingRanker, TfIdfPrefixRanker
+from tangent import FMeasureRanker, DistanceRanker, RecallRanker, PrefixRanker, TfIdfRanker, EverythingRanker, \
+    TfIdfPrefixRanker
 
 
 class Config(object):
@@ -41,7 +40,6 @@ class Config(object):
     HOST = '0.0.0.0'
 
 
-
 class FMeasureConfig(Config):
     """
     Uses the FMeasureRanker and default database
@@ -49,6 +47,7 @@ class FMeasureConfig(Config):
     RANKER = FMeasureRanker()
     DATABASE = 0
     PORT = 9002
+
 
 class DistanceConfig(Config):
     """
@@ -58,6 +57,7 @@ class DistanceConfig(Config):
     DATABASE = 0
     PORT = 9003
 
+
 class RecallConfig(Config):
     """
     Uses the RecallRanker and default database
@@ -65,6 +65,7 @@ class RecallConfig(Config):
     RANKER = RecallRanker()
     DATABASE = 0
     PORT = 9004
+
 
 class PrefixConfig(Config):
     """
@@ -74,6 +75,7 @@ class PrefixConfig(Config):
     DATABASE = 0
     PORT = 9005
 
+
 class TfIdfConfig(Config):
     """
     Uses the TFIdfRanker and default database
@@ -82,6 +84,7 @@ class TfIdfConfig(Config):
     DATABASE = 0
     PORT = 9006
 
+
 class EverythingConfig(Config):
     """
     Uses the Everything Ranker and default database
@@ -89,6 +92,7 @@ class EverythingConfig(Config):
     RANKER = EverythingRanker()
     DATABASE = 0
     PORT = 9007
+
 
 class TfIdfPrefixConfig(Config):
     """

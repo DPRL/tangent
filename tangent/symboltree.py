@@ -33,6 +33,9 @@ from sys import argv
 ET.register_namespace('', 'http://www.w3.org/1998/Math/MathML')
 
 class MathML:
+    """
+    List of ecognized tags
+    """
     math = '{http://www.w3.org/1998/Math/MathML}math'
     mn = '{http://www.w3.org/1998/Math/MathML}mn'
     mo = '{http://www.w3.org/1998/Math/MathML}mo'
@@ -56,11 +59,17 @@ class MathML:
     semantics = '{http://www.w3.org/1998/Math/MathML}semantics'
 
 class UnknownTagException(Exception):
+    """
+    An exception to indicate unknown Mathml tag
+    """
     def __init__(self, tag):
         self.tag = tag
 
 
 class Symbol:
+    """
+    Symbol in a symbol tree
+    """
     def __init__(self, tag, next=None, above=None, below=None, within=None):
         self.tag = tag
         self.next = next
@@ -70,6 +79,9 @@ class Symbol:
         self.id = None
 
     def build_repr(self, builder):
+        """
+        Build representation of symbol
+        """
         builder.append('(')
         builder.append(self.tag)
         if self.next:
@@ -96,6 +108,12 @@ class Symbol:
                 child.generate_ids(prefix + (v_dist,))
 
     def get_pairs(self):
+        """
+        Return the pairs in the symbol tree
+
+        :rtype list
+        :return list of symbols
+        """
         def mk_helper(v_dist_diff):
             def helper(tup):
                 right, h_dist, v_dist = tup
@@ -111,6 +129,9 @@ class Symbol:
 
     @classmethod
     def parse_from_mathml(cls, elem):
+        """
+        Parse symbol tree from mathml
+        """
         if elem.tag == MathML.math:
             children = list(elem)
             if len(children) == 1:
@@ -234,6 +255,9 @@ class Symbol:
             raise UnknownTagException(elem.tag)
 
 class SymbolIterator(object):
+    """
+    Iterator over a symbol tree
+    """
     def __init__(self, node):
         self.stack = deque([(node, 0, 0)] if node else [])
 
@@ -255,7 +279,12 @@ class SymbolIterator(object):
         return (elem, h_dist, v_dist)
 
 class SymbolTree:
+    """
+    Symbol Tree manipulation and parsing
 
+    Uses latexmlmath (http://dlmf.nist.gov/LaTeXML/index.html) to create the presentation mml
+
+    """
     __slots__ = ['root', 'latex', 'mathml', 'document']
 
     def __init__(self, root):
@@ -263,6 +292,12 @@ class SymbolTree:
         self.root.generate_ids()
 
     def get_pairs(self, get_paths=False):
+        """
+        Return list of symbols
+
+        :rtype: list
+        :return list of symbols
+        """
         if get_paths:
             pairs = []
             paths = []
@@ -280,6 +315,15 @@ class SymbolTree:
 
     @classmethod
     def parse(cls, filename, missing_tags=None):
+        """
+        Extract symbols tree from file
+
+        :type filename: string
+        :param filename: directory to seach in
+
+        :rtype: list(SymbolTree)
+        :return list of Symbol trees
+        """
         ext = os.path.splitext(filename)[1]
         if ext == '.tex':
             with open(filename) as f:
@@ -292,6 +336,17 @@ class SymbolTree:
 
     @classmethod
     def parse_from_tex(cls, tex):
+        """
+        Parse expression from tex string using latexmlmath to convert ot presentation markup language
+
+
+        :param tex tex string
+        :type tex string
+
+        :rtype SymbolTree
+        :return SymbolTree
+        """
+
         p = subprocess.Popen('latexmlmath -pmml - -', shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=open('/dev/null', 'r'))
         (output, _) = p.communicate(input=tex)
         f = StringIO.StringIO(output)
@@ -299,11 +354,31 @@ class SymbolTree:
 
     @classmethod
     def parse_from_mathml_string(cls, mathml):
+        """
+        Parse expression from mathml string
+
+
+        :param elem mathml string
+
+        :rtype SymbolTree
+        :return SymbolTree
+        """
         f = StringIO.StringIO(mathml)
         return cls.parse_all_from_xml(f)[0]
 
     @classmethod
     def parse_from_mathml(cls, elem):
+        """
+        Parse expression from mathml
+
+
+        :param elem mathml string
+
+        :rtype SymbolTree
+        :return SymbolTree
+
+        """
+
         root = Symbol.parse_from_mathml(elem)
         tree = cls(root)
         tree.mathml = ET.tostring(elem)
@@ -311,6 +386,17 @@ class SymbolTree:
 
     @classmethod
     def parse_all_from_xml(cls, filename, missing_tags=None):
+        """
+        Parse expression from xml file
+
+
+        :param filename Directory to search in
+        :type  filename: string
+
+        :rtype list(SymbolTree)
+        :return list of Symbol trees found in file
+
+        """
         trees = []
         for event, elem in ET.iterparse(filename):
             if event == 'end' and elem.tag == MathML.math:
@@ -356,6 +442,12 @@ class SymbolTree:
 
     @classmethod
     def parse_directory(cls, directory):
+        """
+        Parse the symbols in the files in the directory
+
+        :param directory Directory to search in
+        :type  directory: string
+        """
         missing_tags = Counter()
         fullnames = []
         if os.path.isfile(directory):

@@ -22,20 +22,18 @@
         - Richard Zanibbi: rlaz@cs.rit.edu
 """
 
-
 """
-Indexer is a stanalone script that indexes a collection a d saves the index in a redis store
+Indexer is a standalone script that indexes a collection a d saves the index in a redis store
 
-Supports mathml and tex
+Supports mathml,.xhtml and tex files
 """
-
-
 
 from sys import argv, exit
 
 from werkzeug.utils import import_string
 
 from tangent import RedisIndex, SymbolTree
+
 
 def index(directory):
     """
@@ -54,9 +52,14 @@ def index(directory):
     for tag, count in stats['missing_tags'].most_common():
         print('    %s (%d)' % (tag, count))
 
+
 def second_pass():
+    """
+    Perform secondary operations as defined by index
+    """
     index = RedisIndex()
     index.second_pass()
+
 
 def flush():
     """
@@ -66,12 +69,14 @@ def flush():
     index = RedisIndex()
     index.r.flushdb()
 
+
 def print_help_and_exit():
     """
     Prints usage statement
     """
 
     exit('Usage: python index.py {index|second_pass|flush} <directory> [<directory2> ..]')
+
 
 if __name__ == '__main__':
 

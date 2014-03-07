@@ -28,7 +28,14 @@ from collections import namedtuple
 from tangent import SymbolTree
 
 class Index:
+    """
+    A class to build an Index and search the index
+    """
     def search_tex(self, tex):
+        """
+        Search the index for a given tex expression
+
+        """
         return self.search(SymbolTree.parse_from_tex(tex))
 
     def add_all(self, trees):
@@ -36,6 +43,12 @@ class Index:
             self.add(t)
 
     def add_directory(self, directory):
+        """
+        Add the expressions found in the index to the symbol tree
+
+        :type directory: string
+        :param directory: directory to search for expressions
+        """
         self.add_all(SymbolTree.parse_directory(directory)[0])
 
     def second_pass(self):

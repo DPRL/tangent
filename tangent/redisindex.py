@@ -43,11 +43,26 @@ class RedisIndex(Index):
         self.all_rankers = [FMeasureRanker(), DistanceRanker(), RecallRanker(), PrefixRanker(), TfIdfRanker(), EverythingRanker(), TfIdfPrefixRanker()]
 
     def random(self):
+        """
+        Return the tex of a random expression
+
+        :rtype: string
+        :return: the latex of a random expression
+
+        """
         expr_count = int(self.r.get('next_expr_id'))
         expr_id = randint(0, expr_count - 1)
         return self.r.get('expr:%d:latex' % expr_id)
         
     def add(self, tree):
+        """
+        Add symbol tree to index
+
+        :type tree: SymbolTree
+        :param tree:Symbol Tree
+
+
+        """
         # Check if expression is in the index.
         existing_id = self.exact_search(tree)
         if existing_id:
@@ -88,6 +103,18 @@ class RedisIndex(Index):
             pipe.execute()
 
     def search(self, search_tree):
+        """
+        Return all matches for this search tree
+
+        :type search_tree: SymbolTree
+        :param search_tree:Symbol Tree
+
+
+        :rtype: list[Result]
+        :return: list of search results
+
+        """
+        
         matches = defaultdict(list)
         pair_counts = dict()
         total_exprs = int(self.r.get('next_expr_id')) + 1
@@ -155,6 +182,9 @@ class RedisIndex(Index):
         return results, len(matches), pair_counts
 
     def second_pass(self):
+        """
+        Apply any post calculation required by rankers
+        """
         for ranker in self.all_rankers:
             try:
                 ranker.second_pass(self.r)
@@ -163,13 +193,42 @@ class RedisIndex(Index):
                 pass
 
     def exact_search(self, search_tree):
+        """
+        Return symbols in symbol tree in index if any
+
+        :type search_tree:str
+        :param search_tree: symbol pair
+
+        :rtype: string
+        :return: symbol path of tree
+
+        """
         return self.r.get(u'tree:%s' % search_tree.build_repr())
 
     def get_document_links(self, expr_id):
+        """
+        Return all links that expression occurs in
+
+        :type expr_id:int
+        :param expr_id:expression id
+
+
+        :rtype: list[(str,str)]
+        :return: list of of  wikipedia link
+        """
         docs = self.r.smembers('expr:%s:doc' % expr_id)
         return [self.create_document_link(d) for d in docs]
 
     def create_document_link(self, path):
+        """
+        Given the path of the document, return the direct wikipedia link and the name of the article
+
+        :type path:str
+        :param path:wikipedia link
+
+        :rtype: (str,str)
+        :return: wikipedia link and title of article
+        """
         match = re.search(r'([^/]*)\.mml', path)
         if match:
             return 'http://en.wikipedia.org/w/index.php?search=%s&go=Go' % urllib.quote(match.group(1)), 'Wikipedia - ' + match.group(1)
