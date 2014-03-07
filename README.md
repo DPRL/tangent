@@ -16,18 +16,33 @@ Details  about the implementation can be found in his thesis:
 
 
 
-
-SOURCE FILES
+Dependencies
 ------------
 
-Source code (in Python and C) is provided in the src/ directory.
+
+Below are the external components used by Tangent
+
+* [Latexml](http://dlmf.nist.gov/LaTeXML/index.html): a library to covert a Text expression to MathMl
+* [MathJax](http://www.mathjax.org/): a javascript library used in displaying the math expressions in the results page
+* [Redis](http://redis.io/): A Memory KeyValue store that is used as the index
+* python 2.7
+
+Python Modules:
+
+* Redis: Module to connect from python to a redis datastorre
+* [werkzeug](http://werkzeug.pocoo.org/):WSGI Utility Library
+* [flask](http://flask.pocoo.org/): Microframework for Python
+
+The above python modules can be installed using the command:
+
+    pip install werkzeug redis flask
 
 
 
 Running Tangent
 ======
 
-Ensure that redis is installed and running.
+
 
 To index a collection:
 -----------------
@@ -53,31 +68,14 @@ To run the webserver:
 
     The server will launch and be available on the port defined in the config object
 
-Dependencies
-------------
 
-Below are the external components used by Tangent
-
-* [Latexml](http://dlmf.nist.gov/LaTeXML/index.html): a library to covert a Text expression to MathMl
-* [MathJax](http://www.mathjax.org/): a javascript library used in displaying the math expressions in the results page
-* [Redis](http://redis.io/): A Memory KeyValue store that is used as the index
-
-Python Modules:
-
-* Redis: Module to connect from python to a redis datastorre
-* [werkzeug](http://werkzeug.pocoo.org/):WSGI Utility Library
-* [flask](http://flask.pocoo.org/): Microframework for Python
-
-The above python modules can be installed using the command:
-
-    pip install werkzeug redis flask
 
 
 
 
 * * *
 
-* Visit the DPRL page for more information about the lab and projects.
+* Visit the [DPRL page](http://www.cs.rit.edu/~dprl/) for more information about the lab and projects.
 
 * This material is based upon work supported by the National Science Foundation under Grant No. IIS-1016815.
 Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s)
