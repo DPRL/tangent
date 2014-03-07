@@ -1,6 +1,6 @@
 """
-    DPRL Math Symbol Recognizers
-    Copyright (c) 2012-2014 David Stalnaker, Richard Zanibbi
+    Tangent
+    Copyright (c) 2013 David Stalnaker, Richard Zanibbi
 
     This file is part of Tangent.
 

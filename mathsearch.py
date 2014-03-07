@@ -1,6 +1,6 @@
 """
-    DPRL Math Symbol Recognizers
-    Copyright (c) 2012-2014 David Stalnaker, Richard Zanibbi
+    Tangent
+    Copyright (c) 2013 David Stalnaker, Richard Zanibbi
 
     This file is part of Tangent.
 
@@ -21,6 +21,8 @@
         - David Stalnaker: david.stalnaker@gmail.com
         - Richard Zanibbi: rlaz@cs.rit.edu
 """
+
+
 import time
 from sys import argv, exit
 import os

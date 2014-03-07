@@ -1,6 +1,6 @@
 """
-    DPRL Math Symbol Recognizers
-    Copyright (c) 2012-2014 David Stalnaker, Richard Zanibbi
+    Tangent
+    Copyright (c) 2013 David Stalnaker, Richard Zanibbi
 
     This file is part of Tangent.
 
@@ -21,6 +21,16 @@
         - David Stalnaker: david.stalnaker@gmail.com
         - Richard Zanibbi: rlaz@cs.rit.edu
 """
+
+
+"""
+Indexer is a stanalone script that indexes a collection a d saves the index in a redis store
+
+Supports mathml and tex
+"""
+
+
+
 from sys import argv, exit
 
 from werkzeug.utils import import_string
@@ -28,6 +38,10 @@ from werkzeug.utils import import_string
 from tangent import RedisIndex, SymbolTree
 
 def index(directory):
+    """
+    Index a directory containing .text,'.xhtml', '.mathml', '.mml' files
+
+    """
     trees, stats = SymbolTree.parse_directory(directory)
     index = RedisIndex()
     index.add_all(trees)
@@ -45,10 +59,18 @@ def second_pass():
     index.second_pass()
 
 def flush():
+    """
+    Empty the redis database
+    """
+
     index = RedisIndex()
     index.r.flushdb()
 
 def print_help_and_exit():
+    """
+    Prints usage statement
+    """
+
     exit('Usage: python index.py {index|second_pass|flush} <directory> [<directory2> ..]')
 
 if __name__ == '__main__':
